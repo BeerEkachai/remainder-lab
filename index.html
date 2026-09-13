@@ -2,6 +2,7 @@
 <html lang="th">
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Remainder Theorem Inquiry Lab</title>
   <style>
@@ -20,79 +21,79 @@
 </head>
 <body>
   <header>
-    <div class="brand">???? Remainder Theorem Inquiry Lab</div>
-    <div class="sub">��ͧ��Ժѵԡ�ä�Ե��ʵ��Ẻ�׺����</div>
+    <div class="brand">🧪📐 Remainder Theorem Inquiry Lab</div>
+    <div class="sub">ห้องปฏิบัติการคณิตศาสตร์แบบสืบเสาะ</div>
   </header>
 
   <div class="wrap">
     <div class="toolbar">
-      <button class="p" onclick="mode('student')">?? �����ѡ���¹</button>
-      <button class="s" onclick="mode('teacher')">?? Dashboard ���</button>
-      <button onclick="csv()">?? ���͡ CSV</button>
+      <button class="p" onclick="mode('student')">🎓 โหมดนักเรียน</button>
+      <button class="s" onclick="mode('teacher')">📊 Dashboard ครู</button>
+      <button onclick="csv()">⬇️ ส่งออก CSV</button>
     </div>
 
     <section id="student">
       <div class="grid">
         <div class="card">
-          <h2>?? �������áԨ</h2>
-          <label>���� / ���ʹѡ���¹</label><input id="name" placeholder="�� S01">
-          <label>��ͧ</label><input id="room" placeholder="�� �.3/2">
-          <label>�Ţ���</label><input id="num" placeholder="�� 12">
-          <button class="p" onclick="start()">?? ���������׺����</button>
+          <h2>👤 เริ่มภารกิจ</h2>
+          <label>ชื่อ / รหัสนักเรียน</label><input id="name" placeholder="เช่น S01">
+          <label>ห้อง</label><input id="room" placeholder="เช่น ม.4/3">
+          <label>เลขที่</label><input id="num" placeholder="เช่น 12">
+          <button class="p" onclick="start()">🚀 เริ่มการสืบเสาะ</button>
           <div id="loginMsg"></div>
         </div>
         <div class="card">
-          <h2>?? ��áԨ����</h2>
-          <div class="mission"><span class="mi">??</span><div><b>Explore</b>���ͧ���͡��� c ��Фӹǳ P(c)</div></div>
-          <div class="mission"><span class="mi">??</span><div><b>Observe</b>�ѧࡵ����� P(c)=0</div></div>
-          <div class="mission"><span class="mi">??</span><div><b>Connect</b>������§ (x?c) �Ѻ��ǻ�Сͺ</div></div>
-          <div class="mission"><span class="mi">??</span><div><b>Reduce</b>�Ҵ��ó�ա�� Q(x)</div></div>
-          <div class="mission"><span class="mi">??</span><div><b>Construct</b>���ҧ Q(x) ���µ��ͧ</div></div>
-          <div class="mission"><span class="mi">??</span><div><b>Reflect</b>͸Ժ����觷��鹾�</div></div>
+          <h2>🧭 ภารกิจย่อย</h2>
+          <div class="mission"><span class="mi">🔎</span><div><b>Explore</b>ทดลองเลือกค่า c และคำนวณ P(c)</div></div>
+          <div class="mission"><span class="mi">👀</span><div><b>Observe</b>สังเกตเมื่อ P(c)=0</div></div>
+          <div class="mission"><span class="mi">🧩</span><div><b>Connect</b>เชื่อมโยง (x−c) กับตัวประกอบ</div></div>
+          <div class="mission"><span class="mi">📉</span><div><b>Reduce</b>คาดการณ์ดีกรี Q(x)</div></div>
+          <div class="mission"><span class="mi">✏️</span><div><b>Construct</b>สร้าง Q(x) ด้วยตนเอง</div></div>
+          <div class="mission"><span class="mi">💡</span><div><b>Reflect</b>อธิบายสิ่งที่ค้นพบ</div></div>
         </div>
       </div>
 
       <div id="lab" class="card hidden">
-        <div class="small">������¹: <span id="who"></span></div>
-        <h2>?? ��ͧ��Ժѵԡ��</h2>
-        <label>��ع�� P(x)</label><input id="poly" value="x^3-6x^2+11x-6">
-        <label>��� c</label><input id="c" value="1">
+        <div class="small">ผู้เรียน: <span id="who"></span></div>
+        <h2>🔬 ห้องปฏิบัติการ</h2>
+        <label>พหุนาม P(x)</label><input id="poly" value="x^3-6x^2+11x-6">
+        <label>ค่า c</label><input id="c" value="1">
         <div class="toolbar" style="justify-content:flex-start">
-          <button class="p" onclick="pc()">1?? ���ͧ P(c)</button>
-          <button onclick="newProblem()">?? ����¹⨷��</button>
+          <button class="p" onclick="pc()">1️⃣ ทดลอง P(c)</button>
+          <button onclick="newProblem()">🎲 เปลี่ยนโจทย์</button>
         </div>
 
         <div id="s2" class="hidden">
           <div id="pco" class="status"></div>
-          <h3>?? ��鹷�� 2 � �ѧࡵ��������ѹ��</h3>
+          <h3>👀 ขั้นที่ 2 — สังเกตความสัมพันธ์</h3>
           <select id="factor">
-            <option value="">���͡�ӵͺ</option>
-            <option value="yes">��� P(c)=0 ���� (x?c) �繵�ǻ�Сͺ�ͧ P(x)</option>
-            <option value="no">��� P(c)=0 ���� (x?c) �������ǡѺ P(x)</option>
+            <option value="">เลือกคำตอบ</option>
+            <option value="yes">ถ้า P(c)=0 แล้ว (x−c) เป็นตัวประกอบของ P(x)</option>
+            <option value="no">ถ้า P(c)=0 แล้ว (x−c) ไม่เกี่ยวกับ P(x)</option>
           </select>
-          <button onclick="factorCheck()">��Ǩ�ӵͺ</button>
+          <button onclick="factorCheck()">ตรวจคำตอบ</button>
         </div>
 
         <div id="s3" class="hidden">
-          <h3>?? ��鹷�� 3 � Ŵ�ա��</h3>
-          <p>�Ԩ�ó� P(x)=(x?c)Q(x) ���ǤҴ��ó�ա�բͧ Q(x)</p>
-          <input id="dq" type="number" placeholder="�ա�� Q(x)">
-          <button onclick="degreeCheck()">��Ǩ��äҴ��ó�</button>
+          <h3>📉 ขั้นที่ 3 — ลดดีกรี</h3>
+          <p>พิจารณา P(x)=(x−c)Q(x) แล้วคาดการณ์ดีกรีของ Q(x)</p>
+          <input id="dq" type="number" placeholder="ดีกรี Q(x)">
+          <button onclick="degreeCheck()">ตรวจการคาดการณ์</button>
         </div>
 
         <div id="s4" class="hidden">
-          <h3>?? ��鹷�� 4 � ���ҧ Q(x)</h3>
-          <p class="small">��������ѧ�����������Ըբͧ���ͧ ���ǻ�͹ Q(x) �� x^2-5x+6</p>
+          <h3>✏️ ขั้นที่ 4 — สร้าง Q(x)</h3>
+          <p class="small">ใช้การหารสังเคราะห์หรือวิธีของตนเอง แล้วป้อน Q(x) เช่น x^2-5x+6</p>
           <input id="q" placeholder="Q(x)">
-          <button class="g" onclick="qCheck()">��Ǩ Q(x)</button>
-          <button onclick="hint()">?? �ͤ���</button>
+          <button class="g" onclick="qCheck()">ตรวจ Q(x)</button>
+          <button onclick="hint()">💡 ขอคำใบ้</button>
           <div id="hb"></div>
         </div>
 
         <div id="s5" class="hidden">
-          <h3>?? ��鹷�� 5 � Reflection</h3>
-          <textarea id="ref" placeholder="�ѹ�鹾����... ����..."></textarea>
-          <button class="p" onclick="finish()">?? �ѹ�֡��áԨ</button>
+          <h3>💡 ขั้นที่ 5 — Reflection</h3>
+          <textarea id="ref" placeholder="ฉันค้นพบว่า... เพราะ..."></textarea>
+          <button class="p" onclick="finish()">🏁 บันทึกภารกิจ</button>
         </div>
         <div id="fb"></div>
       </div>
@@ -100,12 +101,12 @@
 
     <section id="teacher" class="hidden">
       <div class="card">
-        <h2>?? Teacher Dashboard</h2>
-        <p class="small">�����������ͧ��������������� �������ö��� Google Sheet ��ҹ Google Apps Script Web App</p>
+        <h2>📊 Teacher Dashboard</h2>
+        <p class="small">ข้อมูลในเครื่องนี้เก็บในเบราว์เซอร์ และสามารถส่งไป Google Sheet ผ่าน Google Apps Script Web App</p>
         <label>Google Apps Script Web App URL</label>
         <input id="ep" placeholder="https://script.google.com/macros/s/.../exec">
-        <button class="s" onclick="saveEP()">?? �ѹ�֡ URL</button>
-        <button onclick="sync()">?? �觢������ Google Sheet</button>
+        <button class="s" onclick="saveEP()">💾 บันทึก URL</button>
+        <button onclick="sync()">☁️ ส่งข้อมูลไป Google Sheet</button>
         <div id="sm"></div>
         <div id="dash"></div>
       </div>
@@ -113,8 +114,8 @@
   </div>
 
   <footer>
-    ?? ���͡�����¹��餳Ե��ʵ�� &nbsp; � &nbsp; ?? Inquiry-Based Learning<br>
-    �Ѳ������͡Ẻ�к�������¹����� &nbsp; <b>�س��� [������-���ʡ�Ţͧ�س���]</b> &nbsp; �ç���¹ [�������ç���¹]
+    📚 สื่อการเรียนรู้คณิตศาสตร์ &nbsp; • &nbsp; 🔎 Inquiry-Based Learning<br>
+    พัฒนาและออกแบบระบบการเรียนรู้โดย &nbsp; <b>นายเอกชัย สะอาดแก้ว</b>
   </footer>
 
   <script>
@@ -137,7 +138,7 @@
     }
 
     function parse(s){
-      s=String(s).replace(/\s+/g,"").replace(/?/g,"-").replace(/\*/g,"").replace(/X/g,"x");
+      s=String(s).replace(/\s+/g,"").replace(/−/g,"-").replace(/\*/g,"").replace(/X/g,"x");
       if(!s||!/^[0-9x^+./-]+$/.test(s))return null;
       if(!/^[+-]/.test(s))s="+"+s;
       let t=s.match(/[+-][^+-]+/g)||[],m={};
@@ -185,11 +186,11 @@
     function start(){
       let n=$("name").value.trim();
       if(!n){
-        $("loginMsg").innerHTML='<div class="status err">��سҡ�͡������������</div>';
+        $("loginMsg").innerHTML='<div class="status err">กรุณากรอกชื่อหรือรหัส</div>';
         return;
       }
       S={id:Date.now().toString(),name:n,room:$("room").value.trim(),num:$("num").value.trim(),score:0,hints:0,start:Date.now(),attempts:0};
-      $("who").textContent=n+" | "+(S.room||"-")+" | �Ţ��� "+(S.num||"-");
+      $("who").textContent=n+" | "+(S.room||"-")+" | เลขที่ "+(S.num||"-");
       $("lab").classList.remove("hidden");
       reset();
     }
@@ -208,7 +209,7 @@
     function pc(){
       let a=parse($("poly").value),c=frac($("c").value);
       if(!a||!Number.isFinite(c)){
-        $("fb").innerHTML='<div class="status err">��Ǩ�ٻẺ P(x) ��� c</div>';
+        $("fb").innerHTML='<div class="status err">ตรวจรูปแบบ P(x) และ c</div>';
         return;
       }
       S.poly=$("poly").value;
@@ -217,7 +218,7 @@
       S.attempts++;
       $("s2").classList.remove("hidden");
       $("pco").className="status "+(Math.abs(S.pc)<1e-9?"ok":"");
-      $("pco").innerHTML="?? P("+fmt(c)+") = <b>"+fmt(S.pc)+"</b>"+(Math.abs(S.pc)<1e-9?" � �׺���е�������":"");
+      $("pco").innerHTML="🔎 P("+fmt(c)+") = <b>"+fmt(S.pc)+"</b>"+(Math.abs(S.pc)<1e-9?" — สืบเสาะต่อได้เลย":"");
       if(Math.abs(S.pc)<1e-9)S.score++;
     }
 
@@ -226,9 +227,9 @@
         S.factor=true;
         S.score+=2;
         $("s3").classList.remove("hidden");
-        $("fb").innerHTML='<div class="status ok">?? �١��ͧ! ������§ P(c)=0 �Ѻ��ǻ�Сͺ������</div>';
+        $("fb").innerHTML='<div class="status ok">🎯 ถูกต้อง! เชื่อมโยง P(c)=0 กับตัวประกอบได้แล้ว</div>';
       }else if($("factor").value){
-        $("fb").innerHTML='<div class="status hint">?? �����ɨҡ�����ô��� (x?c) ���ٹ�� ��������ѹ��������?</div>';
+        $("fb").innerHTML='<div class="status hint">💡 ถ้าเศษจากการหารด้วย (x−c) เป็นศูนย์ ความสัมพันธ์คืออะไร?</div>';
       }
     }
 
@@ -238,33 +239,33 @@
       if(v==a.length-2){
         S.score+=2;
         $("s4").classList.remove("hidden");
-        $("fb").innerHTML='<div class="status ok">?? ������! �ա��Ŵŧ 1 ���</div>';
+        $("fb").innerHTML='<div class="status ok">📉 เยี่ยม! ดีกรีลดลง 1 ขั้น</div>';
       }else{
-        $("fb").innerHTML='<div class="status hint">?? �ա�բͧ (x?c)Q(x) ����Ǣ�ͧ�Ѻ�ա�բͧ Q(x) ���ҧ��?</div>';
+        $("fb").innerHTML='<div class="status hint">💡 ดีกรีของ (x−c)Q(x) เกี่ยวข้องกับดีกรีของ Q(x) อย่างไร?</div>';
       }
     }
 
     function qCheck(){
       let a=parse(S.poly),c=frac(S.c),g=parse($("q").value);
       if(!g){
-        $("hb").innerHTML='<div class="status err">��سһ�͹ Q(x) �� x^2-5x+6</div>';
+        $("hb").innerHTML='<div class="status err">กรุณาป้อน Q(x) เช่น x^2-5x+6</div>';
         return;
       }
       S.q=$("q").value;
       if(eq(g,syn(a,c))){
         S.score+=4;
         $("s5").classList.remove("hidden");
-        $("fb").innerHTML='<div class="status ok">?? Q(x) �١��ͧ! �س���ҧ�ӵͺ���¡�кǹ��âͧ���ͧ������</div>';
+        $("fb").innerHTML='<div class="status ok">🎉 Q(x) ถูกต้อง! คุณสร้างคำตอบด้วยกระบวนการของตนเองได้แล้ว</div>';
       }else{
-        $("hb").innerHTML='<div class="status hint">?? ��Ǩ�������ѧ��������Ъ�ͧ ��е�Ǩ�������Է���ͧ Q(x)</div>';
+        $("hb").innerHTML='<div class="status hint">💡 ตรวจการหารสังเคราะห์ทีละช่อง และตรวจสัมประสิทธิ์ของ Q(x)</div>';
       }
     }
 
     function hint(){
       hl++;
       S.hints++;
-      let m=hl==1?"��� P(c)=0 ���Ԩ�ó���� (x?c) �繵�ǻ�Сͺ�������":hl==2?"�ա�� Q(x) ��ӡ��Ҵա�� P(x) ���� 1":"�� c 㹡������ѧ������ ������ҹ�������Է���ͧ Q(x)";
-      $("hb").innerHTML='<div class="status hint">?? '+m+"</div>";
+      let m=hl==1?"ถ้า P(c)=0 ให้พิจารณาว่า (x−c) เป็นตัวประกอบหรือไม่":hl==2?"ดีกรี Q(x) ต่ำกว่าดีกรี P(x) อยู่ 1":"ใช้ c ในการหารสังเคราะห์ แล้วอ่านสัมประสิทธิ์ของ Q(x)";
+      $("hb").innerHTML='<div class="status hint">💡 '+m+"</div>";
     }
 
     function finish(){
@@ -275,7 +276,7 @@
       a.push({...S});
       localStorage.setItem("rtl_v4_results",JSON.stringify(a));
       trySync(S);
-      $("fb").innerHTML='<div class="status ok">?? �ѹ�֡���� � ��ṹ '+S.score+" | ���� "+S.time+" �Թҷ�</div>";
+      $("fb").innerHTML='<div class="status ok">🏁 บันทึกแล้ว — คะแนน '+S.score+" | เวลา "+S.time+" วินาที</div>";
       dash();
     }
 
@@ -285,7 +286,7 @@
 
     function saveEP(){
       localStorage.setItem("rtl_v4_ep",$("ep").value.trim());
-      $("sm").innerHTML='<div class="status ok">�ѹ�֡ URL ����</div>';
+      $("sm").innerHTML='<div class="status ok">บันทึก URL แล้ว</div>';
     }
 
     async function trySync(x){
@@ -299,7 +300,7 @@
     async function sync(){
       let e=$("ep").value.trim()||localStorage.getItem("rtl_v4_ep");
       if(!e){
-        $("sm").innerHTML='<div class="status hint">��س���� Apps Script Web App URL</div>';
+        $("sm").innerHTML='<div class="status hint">กรุณาใส่ Apps Script Web App URL</div>';
         return;
       }
       localStorage.setItem("rtl_v4_ep",e);
@@ -310,14 +311,14 @@
           n++;
         }catch(z){}
       }
-      $("sm").innerHTML='<div class="status ok">?? �觢����� '+n+" ��¡������</div>";
+      $("sm").innerHTML='<div class="status ok">☁️ ส่งข้อมูล '+n+" รายการแล้ว</div>";
     }
 
     function dash(){
       let a=rec(),d=$("dash");
       if(!d)return;
       let u=new Set(a.map(x=>x.name+"|"+x.room+"|"+x.num)),avg=a.length?(a.reduce((s,x)=>s+(x.score||0),0)/a.length).toFixed(1):0;
-      d.innerHTML='<div class="stats"><div class="stat">?? ������¹<strong>'+u.size+'</strong></div><div class="stat">?? ��áԨ<strong>'+a.length+'</strong></div><div class="stat">? ��ṹ�����<strong>'+avg+'</strong></div><div class="stat">?? ����<strong>'+a.reduce((s,x)=>s+(x.hints||0),0)+'</strong></div></div><div class="table"><table><thead><tr><th>�ѹ���</th><th>������¹</th><th>��ͧ</th><th>�Ţ���</th><th>P(c)</th><th>��ǻ�Сͺ</th><th>�ա�� Q</th><th>Q(x)</th><th>����</th><th>��ṹ</th><th>����</th></tr></thead><tbody>'+a.slice().reverse().map(x=>'<tr><td>'+esc(x.date)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.room)+'</td><td>'+esc(x.num)+'</td><td>'+fmt(x.pc??0)+'</td><td>'+(x.factor?"?":"-")+'</td><td>'+(x.degree??"-")+'</td><td>'+esc(x.q||"-")+'</td><td>'+(x.hints||0)+'</td><td><span class="badge">'+(x.score||0)+'</span></td><td>'+(x.time||0)+"s</td></tr>").join("")+"</tbody></table></div>";
+      d.innerHTML='<div class="stats"><div class="stat">👥 ผู้เรียน<strong>'+u.size+'</strong></div><div class="stat">🧪 ภารกิจ<strong>'+a.length+'</strong></div><div class="stat">⭐ คะแนนเฉลี่ย<strong>'+avg+'</strong></div><div class="stat">💡 คำใบ้<strong>'+a.reduce((s,x)=>s+(x.hints||0),0)+'</strong></div></div><div class="table"><table><thead><tr><th>วันที่</th><th>ผู้เรียน</th><th>ห้อง</th><th>เลขที่</th><th>P(c)</th><th>ตัวประกอบ</th><th>ดีกรี Q</th><th>Q(x)</th><th>คำใบ้</th><th>คะแนน</th><th>เวลา</th></tr></thead><tbody>'+a.slice().reverse().map(x=>'<tr><td>'+esc(x.date)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.room)+'</td><td>'+esc(x.num)+'</td><td>'+fmt(x.pc??0)+'</td><td>'+(x.factor?"✓":"-")+'</td><td>'+(x.degree??"-")+'</td><td>'+esc(x.q||"-")+'</td><td>'+(x.hints||0)+'</td><td><span class="badge">'+(x.score||0)+'</span></td><td>'+(x.time||0)+"s</td></tr>").join("")+"</tbody></table></div>";
     }
 
     function esc(s){
@@ -326,8 +327,8 @@
 
     function csv(){
       let a=rec();
-      if(!a.length){alert("�ѧ����բ�����");return}
-      let c=["date","name","room","num","poly","c","pc","factor","degree","q","hints","score","time","ref"],s="\ufeff"+c.join(",")+"\n"+a.map(x=>c.map(k=>'"'+String(x[k]??"").replaceAll('"','""')+'"').join(",")).join("\n"),u=URL.createObjectURL(new Blob([s],{type:"text/csv;charset=utf-8"})),z=document.createElement("a");
+      if(!a.length){alert("ยังไม่มีข้อมูล");return}
+      let c=["date","name","room","num","poly","c","pc","factor","degree","q","hints","score","time","ref"],s="\ufeff"+c.join(",")+"\n"+a.map(x=>c.map(k=>'"'+String(x[k]??"").replaceAll('"','""')+'"').join(",")).join("\n"),u=URL.createObjectURL(new Blob(*s,{type:"text/csv;charset=utf-8"})),z=document.createElement("a");
       z.href=u;
       z.download="Remainder_Theorem_Inquiry_Lab_results.csv";
       z.click();
