@@ -36,7 +36,7 @@
       <div class="grid">
         <div class="card">
           <h2>👤 เริ่มภารกิจ</h2>
-          <label>ชื่อ / รหัสนักเรียน</label><input id="name" placeholder="เช่น S01">
+          <label>ชื่อ / รหัสนักเรียน</label><input id="name" placeholder="เช่น นายเบียร์  กล้ามปูน้อย">
           <label>ห้อง</label><input id="room" placeholder="เช่น ม.4/3">
           <label>เลขที่</label><input id="num" placeholder="เช่น 12">
           <button class="p" onclick="start()">🚀 เริ่มการสืบเสาะ</button>
@@ -328,7 +328,7 @@
     function csv(){
       let a=rec();
       if(!a.length){alert("ยังไม่มีข้อมูล");return}
-      let c=["date","name","room","num","poly","c","pc","factor","degree","q","hints","score","time","ref"],s="\ufeff"+c.join(",")+"\n"+a.map(x=>c.map(k=>'"'+String(x[k]??"").replaceAll('"','""')+'"').join(",")).join("\n"),u=URL.createObjectURL(new Blob(*s,{type:"text/csv;charset=utf-8"})),z=document.createElement("a");
+      let c=["date","name","room","num","poly","c","pc","factor","degree","q","hints","score","time","ref"],s="\ufeff"+c.join(",")+"\n"+a.map(x=>c.map(k=>'"'+String(x[k]??"").replaceAll('"','""')+'"').join(",")).join("\n"),u=URL.createObjectURL(new Blob([s],{type:"text/csv;charset=utf-8"})),z=document.createElement("a");
       z.href=u;
       z.download="Remainder_Theorem_Inquiry_Lab_results.csv";
       z.click();
