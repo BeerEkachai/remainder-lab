@@ -9,7 +9,7 @@
     body{margin:0;font-family:system-ui,-apple-system,"Noto Sans Thai",sans-serif;background:linear-gradient(135deg,#eef2ff,#f8fafc,#e0f2fe);color:#172033}
     header{text-align:center;padding:30px 16px 15px}.brand{font-size:clamp(25px,5vw,44px);font-weight:900}.sub{color:#64748b}
     .wrap{max-width:1150px;margin:auto;padding:10px 16px 30px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:10px 0 18px}
-    button{border:0;border-radius:12px;padding:11px 15px;font-weight:800;cursor:pointer}button.p{background:#4f46e5;color:white}button.s{background:#0284c7;color:white}button.g{background:#16a34a;color:white}
+    button{border:0;border-radius:12px;padding:11px 15px;font-weight:800;cursor:pointer}button.p{background:#4f46e5;color:white}button.s{background:#0284c7;color:white}button.g{background:#16a34a;color:white}button.danger{background:#ef4444;color:white}
     .card{background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:20px;margin-bottom:16px;box-shadow:0 10px 30px #0f172a10}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px}
     input,select,textarea{width:100%;padding:11px 12px;border:1px solid #cbd5e1;border-radius:10px;font:inherit;margin:5px 0 10px;box-sizing:border-box}textarea{min-height:90px}
     .hidden{display:none}.small{font-size:13px;color:#64748b}.mission{display:flex;gap:12px;margin:12px 0}.mi{font-size:28px}.mission b{display:block}
@@ -36,7 +36,7 @@
       <div class="grid">
         <div class="card">
           <h2>👤 เริ่มภารกิจ</h2>
-          <label>ชื่อ / รหัสนักเรียน</label><input id="name" placeholder="เช่น นายเบียร์  กล้ามปูน้อย">
+          <label>ชื่อ / รหัสนักเรียน</label><input id="name" placeholder="นายเบียร์  กล้ามปูน้อย">
           <label>ห้อง</label><input id="room" placeholder="เช่น ม.4/3">
           <label>เลขที่</label><input id="num" placeholder="เช่น 12">
           <button class="p" onclick="start()">🚀 เริ่มการสืบเสาะ</button>
@@ -105,8 +105,11 @@
         <p class="small">ข้อมูลในเครื่องนี้เก็บในเบราว์เซอร์ และสามารถส่งไป Google Sheet ผ่าน Google Apps Script Web App</p>
         <label>Google Apps Script Web App URL</label>
         <input id="ep" placeholder="https://script.google.com/macros/s/.../exec">
-        <button class="s" onclick="saveEP()">💾 บันทึก URL</button>
-        <button onclick="sync()">☁️ ส่งข้อมูลไป Google Sheet</button>
+        <div class="toolbar" style="justify-content:flex-start; margin-top:10px;">
+          <button class="s" onclick="saveEP()">💾 บันทึก URL</button>
+          <button onclick="sync()">☁️ ส่งข้อมูลไป Google Sheet</button>
+          <button class="danger" onclick="clearData()">🗑️ ล้างข้อมูลในเครื่อง</button>
+        </div>
         <div id="sm"></div>
         <div id="dash"></div>
       </div>
@@ -287,6 +290,14 @@
     function saveEP(){
       localStorage.setItem("rtl_v4_ep",$("ep").value.trim());
       $("sm").innerHTML='<div class="status ok">บันทึก URL แล้ว</div>';
+    }
+
+    function clearData(){
+      if(confirm("คุณครูต้องการล้างข้อมูลในเครื่องทั้งหมดเพื่อเริ่มรอบใหม่ใช่หรือไม่? (ข้อมูลใน Google Sheet จะไม่ถูกลบ)")){
+        localStorage.removeItem("rtl_v4_results");
+        dash();
+        $("sm").innerHTML='<div class="status ok">🗑️ ล้างข้อมูลในเครื่องเรียบร้อยแล้ว</div>';
+      }
     }
 
     async function trySync(x){
