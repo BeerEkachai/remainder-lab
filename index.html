@@ -36,8 +36,8 @@
       <div class="grid">
         <div class="card">
           <h2>👤 เริ่มภารกิจ</h2>
-          <label>ชื่อ / รหัสนักเรียน</label><input id="name" placeholder="นายเบียร์  กล้ามปูน้อย">
-          <label>ห้อง</label><input id="room" placeholder="เช่น ม.4/3">
+          <label>ชื่อ / รหัสนักเรียน</label><input id="name" placeholder="เช่น S01">
+          <label>ห้อง</label><input id="room" placeholder="เช่น ม.3/2">
           <label>เลขที่</label><input id="num" placeholder="เช่น 12">
           <button class="p" onclick="start()">🚀 เริ่มการสืบเสาะ</button>
           <div id="loginMsg"></div>
@@ -101,14 +101,14 @@
 
     <section id="teacher" class="hidden">
       <div class="card">
-        <h2>📊 Teacher Dashboard</h2>
-        <p class="small">ข้อมูลในเครื่องนี้เก็บในเบราว์เซอร์ และสามารถส่งไป Google Sheet ผ่าน Google Apps Script Web App</p>
+        <h2>📊 Teacher Dashboard (ศูนย์กลาง)</h2>
+        <p class="small">ดึงข้อมูลนักเรียนทุกคนจาก Google Sheets มาแสดงผลเรียลไทม์</p>
         <label>Google Apps Script Web App URL</label>
         <input id="ep" placeholder="https://script.google.com/macros/s/.../exec">
         <div class="toolbar" style="justify-content:flex-start; margin-top:10px;">
           <button class="s" onclick="saveEP()">💾 บันทึก URL</button>
-          <button onclick="sync()">☁️ ส่งข้อมูลไป Google Sheet</button>
-          <button class="danger" onclick="clearData()">🗑️ ล้างข้อมูลในเครื่อง</button>
+          <button class="g" onclick="fetchCloudData()">🔄 ดึงข้อมูลศูนย์กลางจาก Sheets</button>
+          <button class="danger" onclick="clearData()">🗑️ ล้างข้อมูลในเครื่องนี้</button>
         </div>
         <div id="sm"></div>
         <div id="dash"></div>
@@ -123,12 +123,15 @@
 
   <script>
     let S={},hl=0,probs=[["x^3-6x^2+11x-6","1"],["x^4-5x^2+4","1"],["x^3-4x^2+x+6","2"],["x^3+2x^2-x-2","1"],["x^4-13x^2+36","2"]];
+    let cloudResults = [];
     const $=id=>document.getElementById(id);
 
     function mode(x){
       $("student").classList.toggle("hidden",x!="student");
       $("teacher").classList.toggle("hidden",x!="teacher");
-      if(x=="teacher")dash();
+      if(x=="teacher"){
+        fetchCloudData();
+      }
     }
 
     function frac(x){
@@ -275,12 +278,11 @@
       S.ref=$("ref").value.trim();
       S.time=Math.round((Date.now()-S.start)/1000);
       S.date=new Date().toLocaleString("th-TH");
-      let a=JSON.parse(localStorage.getItem("rtl_v4_results")||"[]");
+      let a=rec();
       a.push({...S});
       localStorage.setItem("rtl_v4_results",JSON.stringify(a));
       trySync(S);
       $("fb").innerHTML='<div class="status ok">🏁 บันทึกแล้ว — คะแนน '+S.score+" | เวลา "+S.time+" วินาที</div>";
-      dash();
     }
 
     function rec(){
@@ -293,10 +295,11 @@
     }
 
     function clearData(){
-      if(confirm("คุณครูต้องการล้างข้อมูลในเครื่องทั้งหมดเพื่อเริ่มรอบใหม่ใช่หรือไม่? (ข้อมูลใน Google Sheet จะไม่ถูกลบ)")){
+      if(confirm("คุณครูต้องการล้างข้อมูลในเครื่องนี้ใช่หรือไม่?")){
         localStorage.removeItem("rtl_v4_results");
+        cloudResults = [];
         dash();
-        $("sm").innerHTML='<div class="status ok">🗑️ ล้างข้อมูลในเครื่องเรียบร้อยแล้ว</div>';
+        $("sm").innerHTML='<div class="status ok">🗑️ ล้างข้อมูลเรียบร้อยแล้ว</div>';
       }
     }
 
@@ -308,28 +311,35 @@
       }catch(e){}
     }
 
-    async function sync(){
+    async function fetchCloudData(){
       let e=$("ep").value.trim()||localStorage.getItem("rtl_v4_ep");
       if(!e){
-        $("sm").innerHTML='<div class="status hint">กรุณาใส่ Apps Script Web App URL</div>';
+        dash();
         return;
       }
-      localStorage.setItem("rtl_v4_ep",e);
-      let a=rec(),n=0;
-      for(let x of a){
-        try{
-          await fetch(e,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(x)});
-          n++;
-        }catch(z){}
+      $("sm").innerHTML='<div class="status hint">⏳ กำลังดึงข้อมูลนักเรียนทุกคนจาก Google Sheets...</div>';
+      try{
+        let res = await fetch(e);
+        let data = await res.json();
+        if(Array.isArray(data) && data.length > 0){
+          cloudResults = data;
+          $("sm").innerHTML='<div class="status ok">✅ ดึงข้อมูลสำเร็จ! พบ ' + data.length + ' รายการจากทุกเครื่อง</div>';
+        } else {
+          $("sm").innerHTML='<div class="status hint">ยังไม่มีข้อมูลใน Google Sheets หรือรูปแบบ URL ไม่ถูกต้อง</div>';
+        }
+      }catch(err){
+        $("sm").innerHTML='<div class="status err">❌ ไม่สามารถดึงข้อมูลได้ กรุณาตรวจสอบการ Deploy Web App</div>';
       }
-      $("sm").innerHTML='<div class="status ok">☁️ ส่งข้อมูล '+n+" รายการแล้ว</div>";
+      dash();
     }
 
     function dash(){
-      let a=rec(),d=$("dash");
+      let localData = rec();
+      let a = cloudResults.length > 0 ? cloudResults : localData;
+      let d=$("dash");
       if(!d)return;
-      let u=new Set(a.map(x=>x.name+"|"+x.room+"|"+x.num)),avg=a.length?(a.reduce((s,x)=>s+(x.score||0),0)/a.length).toFixed(1):0;
-      d.innerHTML='<div class="stats"><div class="stat">👥 ผู้เรียน<strong>'+u.size+'</strong></div><div class="stat">🧪 ภารกิจ<strong>'+a.length+'</strong></div><div class="stat">⭐ คะแนนเฉลี่ย<strong>'+avg+'</strong></div><div class="stat">💡 คำใบ้<strong>'+a.reduce((s,x)=>s+(x.hints||0),0)+'</strong></div></div><div class="table"><table><thead><tr><th>วันที่</th><th>ผู้เรียน</th><th>ห้อง</th><th>เลขที่</th><th>P(c)</th><th>ตัวประกอบ</th><th>ดีกรี Q</th><th>Q(x)</th><th>คำใบ้</th><th>คะแนน</th><th>เวลา</th></tr></thead><tbody>'+a.slice().reverse().map(x=>'<tr><td>'+esc(x.date)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.room)+'</td><td>'+esc(x.num)+'</td><td>'+fmt(x.pc??0)+'</td><td>'+(x.factor?"✓":"-")+'</td><td>'+(x.degree??"-")+'</td><td>'+esc(x.q||"-")+'</td><td>'+(x.hints||0)+'</td><td><span class="badge">'+(x.score||0)+'</span></td><td>'+(x.time||0)+"s</td></tr>").join("")+"</tbody></table></div>";
+      let u=new Set(a.map(x=>x.name+"|"+x.room+"|"+x.num)),avg=a.length?(a.reduce((s,x)=>s+Number(x.score||0),0)/a.length).toFixed(1):0;
+      d.innerHTML='<div class="stats"><div class="stat">👥 ผู้เรียน<strong>'+u.size+'</strong></div><div class="stat">🧪 ภารกิจ<strong>'+a.length+'</strong></div><div class="stat">⭐ คะแนนเฉลี่ย<strong>'+avg+'</strong></div><div class="stat">💡 คำใบ้<strong>'+a.reduce((s,x)=>s+Number(x.hints||0),0)+'</strong></div></div><div class="table"><table><thead><tr><th>รอบ</th><th>วันที่</th><th>ผู้เรียน</th><th>ห้อง</th><th>เลขที่</th><th>P(c)</th><th>ตัวประกอบ</th><th>ดีกรี Q</th><th>Q(x)</th><th>คำใบ้</th><th>คะแนน</th><th>เวลา</th></tr></thead><tbody>'+a.slice().reverse().map(x=>'<tr><td><b>'+(x.round||"-")+'</b></td><td>'+esc(x.date)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.room)+'</td><td>'+esc(x.num)+'</td><td>'+fmt(x.pc??0)+'</td><td>'+(x.factor?"✓":"-")+'</td><td>'+(x.degree??"-")+'</td><td>'+esc(x.q||"-")+'</td><td>'+(x.hints||0)+'</td><td><span class="badge">'+(x.score||0)+'</span></td><td>'+(x.time||0)+"s</td></tr>").join("")+"</tbody></table></div>";
     }
 
     function esc(s){
@@ -337,9 +347,9 @@
     }
 
     function csv(){
-      let a=rec();
+      let a = cloudResults.length > 0 ? cloudResults : rec();
       if(!a.length){alert("ยังไม่มีข้อมูล");return}
-      let c=["date","name","room","num","poly","c","pc","factor","degree","q","hints","score","time","ref"],s="\ufeff"+c.join(",")+"\n"+a.map(x=>c.map(k=>'"'+String(x[k]??"").replaceAll('"','""')+'"').join(",")).join("\n"),u=URL.createObjectURL(new Blob([s],{type:"text/csv;charset=utf-8"})),z=document.createElement("a");
+      let c=["round","date","name","room","num","poly","c","pc","factor","degree","q","hints","score","time","ref"],s="\ufeff"+c.join(",")+"\n"+a.map(x=>c.map(k=>'"'+String(x[k]??"").replaceAll('"','""')+'"').join(",")).join("\n"),u=URL.createObjectURL(new Blob([s],{type:"text/csv;charset=utf-8"})),z=document.createElement("a");
       z.href=u;
       z.download="Remainder_Theorem_Inquiry_Lab_results.csv";
       z.click();
