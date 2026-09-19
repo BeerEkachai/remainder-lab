@@ -28,7 +28,7 @@
   <div class="wrap">
     <div class="toolbar">
       <button class="p" onclick="mode('student')">🎓 โหมดนักเรียน</button>
-      <button class="s" onclick="mode('teacher')">📊 Dashboard ครู</button>
+      <button class="s" onclick="mode('teacher')">🔒 Dashboard ครู</button>
       <button onclick="csv()">⬇️ ส่งออก CSV</button>
     </div>
 
@@ -36,7 +36,7 @@
       <div class="grid">
         <div class="card">
           <h2>👤 เริ่มภารกิจ</h2>
-          <label>ชื่อ / รหัสนักเรียน</label><input id="name" placeholder="เช่น ครูเบียร์กล้ามปูน้อย">
+          <label>ชื่อ / รหัสนักเรียน</label><input id="name" placeholder="เช่น นายเบียร์  กล้ามปูน้อย">
           <label>ห้อง</label><input id="room" placeholder="เช่น ม.4/3">
           <label>เลขที่</label><input id="num" placeholder="เช่น 12">
           <button class="p" onclick="start()">🚀 เริ่มการสืบเสาะ</button>
@@ -101,7 +101,7 @@
 
     <section id="teacher" class="hidden">
       <div class="card">
-        <h2>📊 Teacher Dashboard (ศูนย์กลาง)</h2>
+        <h2>📊 Teacher Dashboard (สำหรับครูเท่านั้น)</h2>
         <p class="small">ดึงข้อมูลนักเรียนทุกคนจาก Google Sheets มาแสดงผลเรียลไทม์</p>
         <label>Google Apps Script Web App URL</label>
         <input id="ep" placeholder="https://script.google.com/macros/s/.../exec">
@@ -122,11 +122,28 @@
   </footer>
 
   <script>
+    // 💡 ตั้งค่ารหัสผ่านเข้า Dashboard ครูตรงนี้ (เปลี่ยนเลข 1234 เป็นรหัสที่คุณครูต้องการได้เลยครับ)
+    const TEACHER_PASSWORD = "9999";
+
     let S={},hl=0,probs=[["x^3-6x^2+11x-6","1"],["x^4-5x^2+4","1"],["x^3-4x^2+x+6","2"],["x^3+2x^2-x-2","1"],["x^4-13x^2+36","2"]];
     let cloudResults = [];
+    let isTeacherAuthed = false;
     const $=id=>document.getElementById(id);
 
     function mode(x){
+      if(x == 'teacher' && !isTeacherAuthed){
+        let pwd = prompt("🔒 กรุณากรอกรหัสผ่านสำหรับ Dashboard ครู:");
+        if(pwd === TEACHER_PASSWORD){
+          isTeacherAuthed = true;
+          alert("✅ รหัสผ่านถูกต้อง เข้าสู่ Dashboard ครูเรียบร้อย");
+        } else if(pwd !== null) {
+          alert("❌ รหัสผ่านไม่ถูกต้อง! เฉพาะคุณครูเท่านั้นที่เข้าถึงส่วนนี้ได้");
+          return;
+        } else {
+          return;
+        }
+      }
+
       $("student").classList.toggle("hidden",x!="student");
       $("teacher").classList.toggle("hidden",x!="teacher");
       if(x=="teacher"){
@@ -347,6 +364,14 @@
     }
 
     function csv(){
+      if(!isTeacherAuthed){
+        let pwd = prompt("🔒 กรุณากรอกรหัสผ่านเพื่อดาวน์โหลดไฟล์ CSV:");
+        if(pwd !== TEACHER_PASSWORD){
+          alert("❌ รหัสผ่านไม่ถูกต้อง!");
+          return;
+        }
+        isTeacherAuthed = true;
+      }
       let a = cloudResults.length > 0 ? cloudResults : rec();
       if(!a.length){alert("ยังไม่มีข้อมูล");return}
       let c=["round","date","name","room","num","poly","c","pc","factor","degree","q","hints","score","time","ref"],s="\ufeff"+c.join(",")+"\n"+a.map(x=>c.map(k=>'"'+String(x[k]??"").replaceAll('"','""')+'"').join(",")).join("\n"),u=URL.createObjectURL(new Blob([s],{type:"text/csv;charset=utf-8"})),z=document.createElement("a");
