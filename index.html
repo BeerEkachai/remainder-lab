@@ -336,16 +336,16 @@
       }
       $("sm").innerHTML='<div class="status hint">⏳ กำลังดึงข้อมูลนักเรียนทุกคนจาก Google Sheets...</div>';
       try{
-        let res = await fetch(e);
+        let res = await fetch(e, { method: "GET", redirect: "follow" });
         let data = await res.json();
-        if(Array.isArray(data) && data.length > 0){
+        if(Array.isArray(data)){
           cloudResults = data;
-          $("sm").innerHTML='<div class="status ok">✅ ดึงข้อมูลสำเร็จ! พบ ' + data.length + ' รายการจากทุกเครื่อง</div>';
+          $("sm").innerHTML='<div class="status ok">✅ ดึงข้อมูลสำเร็จ! พบ ' + data.length + ' รายการจากศูนย์กลาง</div>';
         } else {
-          $("sm").innerHTML='<div class="status hint">ยังไม่มีข้อมูลใน Google Sheets หรือรูปแบบ URL ไม่ถูกต้อง</div>';
+          $("sm").innerHTML='<div class="status hint">ยังไม่มีข้อมูลใน Google Sheets</div>';
         }
       }catch(err){
-        $("sm").innerHTML='<div class="status err">❌ ไม่สามารถดึงข้อมูลได้ กรุณาตรวจสอบการ Deploy Web App</div>';
+        $("sm").innerHTML='<div class="status err">❌ ไม่สามารถดึงข้อมูลได้ กรุณาตรวจสอบลิงก์ Web App (ต้องลงท้ายด้วย /exec และตั้งสิทธิ์เป็น Anyone)</div>';
       }
       dash();
     }
@@ -388,7 +388,7 @@
       reset();
     }
 
-    $("ep").value="https://script.google.com/macros/s/AKfycbxPZGBOkelWmWFvhlBS5aNGqN6jhFJx-QGMzLrAjfV-6Dp6QgNJjwIOZp5r-TBC9vwLKA/exec";
+    $("ep").value="https://script.google.com/macros/s/AKfycbxSyZCGE7meTYxQuoPPfgvGrXN_CxvNN0lsFf_7AvcaN6Lspq_-pCeWYnEsp0t2DaRiYw/exec";
 localStorage.setItem("rtl_v4_ep", $("ep").value);
   </script>
 </body>
