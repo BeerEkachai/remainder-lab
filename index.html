@@ -24,14 +24,12 @@
     <div class="brand">🧪📐 Remainder Theorem Inquiry Lab</div>
     <div class="sub">ห้องปฏิบัติการคณิตศาสตร์แบบสืบเสาะ</div>
   </header>
-
   <div class="wrap">
     <div class="toolbar">
       <button class="p" onclick="mode('student')">🎓 โหมดนักเรียน</button>
       <button class="s" onclick="mode('teacher')">🔒 Dashboard ครู</button>
       <button onclick="csv()">⬇️ ส่งออก CSV</button>
     </div>
-
     <section id="student">
       <div class="grid">
         <div class="card">
@@ -52,7 +50,6 @@
           <div class="mission"><span class="mi">💡</span><div><b>Reflect</b>อธิบายสิ่งที่ค้นพบ</div></div>
         </div>
       </div>
-
       <div id="lab" class="card hidden">
         <div class="small">ผู้เรียน: <span id="who"></span></div>
         <h2>🔬 ห้องปฏิบัติการ</h2>
@@ -62,7 +59,6 @@
           <button class="p" onclick="pc()">1️⃣ ทดลอง P(c)</button>
           <button onclick="newProblem()">🎲 เปลี่ยนโจทย์</button>
         </div>
-
         <div id="s2" class="hidden">
           <div id="pco" class="status"></div>
           <h3>👀 ขั้นที่ 2 — สังเกตความสัมพันธ์</h3>
@@ -73,14 +69,12 @@
           </select>
           <button onclick="factorCheck()">ตรวจคำตอบ</button>
         </div>
-
         <div id="s3" class="hidden">
           <h3>📉 ขั้นที่ 3 — ลดดีกรี</h3>
           <p>พิจารณา P(x)=(x−c)Q(x) แล้วคาดการณ์ดีกรีของ Q(x)</p>
           <input id="dq" type="number" placeholder="ดีกรี Q(x)">
           <button onclick="degreeCheck()">ตรวจการคาดการณ์</button>
         </div>
-
         <div id="s4" class="hidden">
           <h3>✏️ ขั้นที่ 4 — สร้าง Q(x)</h3>
           <p class="small">ใช้การหารสังเคราะห์หรือวิธีของตนเอง แล้วป้อน Q(x) เช่น x^2-5x+6</p>
@@ -89,7 +83,6 @@
           <button onclick="hint()">💡 ขอคำใบ้</button>
           <div id="hb"></div>
         </div>
-
         <div id="s5" class="hidden">
           <h3>💡 ขั้นที่ 5 — Reflection</h3>
           <textarea id="ref" placeholder="ฉันค้นพบว่า... เพราะ..."></textarea>
@@ -98,11 +91,10 @@
         <div id="fb"></div>
       </div>
     </section>
-
     <section id="teacher" class="hidden">
       <div class="card">
         <h2>📊 Teacher Dashboard (สำหรับครูเท่านั้น)</h2>
-        <p class="small">ดึงข้อมูลนักเรียนทุกคนจาก Google Sheets มาแสดงผลเรียลไทม์</p>
+        <p class="small">ดึงข้อมูลนักเรียนทุกคนจาก Google Sheets มาแสดงผลเรียลไทม์ (อัปเดตอัตโนมัติทุก 10 วินาที)</p>
         <label>Google Apps Script Web App URL</label>
         <input id="ep" placeholder="https://script.google.com/macros/s/.../exec">
         <div class="toolbar" style="justify-content:flex-start; margin-top:10px;">
@@ -115,19 +107,18 @@
       </div>
     </section>
   </div>
-
   <footer>
     📚 สื่อการเรียนรู้คณิตศาสตร์ &nbsp; • &nbsp; 🔎 Inquiry-Based Learning<br>
     พัฒนาและออกแบบระบบการเรียนรู้โดย &nbsp; <b>นายเอกชัย สะอาดแก้ว</b>
   </footer>
-
   <script>
-    // 💡 ตั้งค่ารหัสผ่านเข้า Dashboard ครูตรงนี้ (เปลี่ยนเลข 1234 เป็นรหัสที่คุณครูต้องการได้เลยครับ)
     const TEACHER_PASSWORD = "9999";
+    const DEFAULT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxSyZCGE7meTYxQuoPPfgvGrXN_CxvNN0lsFf_7AvcaN6Lspq_-pCeWYnEsp0t2DaRiYw/exec";
 
     let S={},hl=0,probs=[["x^3-6x^2+11x-6","1"],["x^4-5x^2+4","1"],["x^3-4x^2+x+6","2"],["x^3+2x^2-x-2","1"],["x^4-13x^2+36","2"]];
     let cloudResults = [];
     let isTeacherAuthed = false;
+    let autoRefreshInterval = null;
     const $=id=>document.getElementById(id);
 
     function mode(x){
@@ -143,11 +134,19 @@
           return;
         }
       }
-
       $("student").classList.toggle("hidden",x!="student");
       $("teacher").classList.toggle("hidden",x!="teacher");
+      
       if(x=="teacher"){
         fetchCloudData();
+        if(!autoRefreshInterval){
+          autoRefreshInterval = setInterval(fetchCloudData, 10000);
+        }
+      } else {
+        if(autoRefreshInterval){
+          clearInterval(autoRefreshInterval);
+          autoRefreshInterval = null;
+        }
       }
     }
 
@@ -321,12 +320,9 @@
     }
 
     async function trySync(x){
-      // ✅ กำหนด URL โดยตรง หาก LocalStorage ว่างเปล่า ให้ใช้ URL นี้ทันที
-      let defaultUrl = "https://script.google.com/macros/s/AKfycbxSyZCGE7meTYxQuoPPfgvGrXN_CxvNN0lsFf_7AvcaN6Lspq_-pCeWYnEsp0t2DaRiYw/exec";
-      let e = localStorage.getItem("rtl_v4_ep") || defaultUrl;
-      
+      let e = localStorage.getItem("rtl_v4_ep") || DEFAULT_WEB_APP_URL;
       try{
-        await fetch(e, {
+        await fetch(e,{
           method: "POST",
           mode: "no-cors",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -336,18 +332,25 @@
         console.error("Sync error:", err);
       }
     }
+
+    async function fetchCloudData(){
+      let e=$("ep").value.trim()||localStorage.getItem("rtl_v4_ep")||DEFAULT_WEB_APP_URL;
+      if(!e){
+        dash();
+        return;
+      }
       $("sm").innerHTML='<div class="status hint">⏳ กำลังดึงข้อมูลนักเรียนทุกคนจาก Google Sheets...</div>';
       try{
         let res = await fetch(e, { method: "GET", redirect: "follow" });
         let data = await res.json();
         if(Array.isArray(data)){
           cloudResults = data;
-          $("sm").innerHTML='<div class="status ok">✅ ดึงข้อมูลสำเร็จ! พบ ' + data.length + ' รายการจากศูนย์กลาง</div>';
+          $("sm").innerHTML='<div class="status ok">✅ ดึงข้อมูลสำเร็จ! พบ ' + data.length + ' รายการจากศูนย์กลาง (อัปเดตสตรีมสด)</div>';
         } else {
           $("sm").innerHTML='<div class="status hint">ยังไม่มีข้อมูลใน Google Sheets</div>';
         }
       }catch(err){
-        $("sm").innerHTML='<div class="status err">❌ ไม่สามารถดึงข้อมูลได้ กรุณาตรวจสอบลิงก์ Web App (ต้องลงท้ายด้วย /exec และตั้งสิทธิ์เป็น Anyone)</div>';
+        $("sm").innerHTML='<div class="status err">❌ ไม่สามารถดึงข้อมูลได้ กรุณาตรวจสอบลิงก์ Web App</div>';
       }
       dash();
     }
@@ -390,9 +393,7 @@
       reset();
     }
 
-   // ✅ กำหนดค่าเริ่มต้น URL ล็อกไว้ให้ทุกเครื่องส่งเข้า Sheets ได้ทันที
-    const DEFAULT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxSyZCGE7meTYxQuoPPfgvGrXN_CxvNN0lsFf_7AvcaN6Lspq_-pCeWYnEsp0t2DaRiYw/exec";
-    
+    // กำหนดค่าเริ่มต้นช่วงโหลดหน้าเว็บ
     let savedUrl = localStorage.getItem("rtl_v4_ep");
     if(!savedUrl || savedUrl.indexOf("/exec") === -1){
       localStorage.setItem("rtl_v4_ep", DEFAULT_WEB_APP_URL);
