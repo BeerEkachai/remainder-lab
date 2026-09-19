@@ -321,19 +321,21 @@
     }
 
     async function trySync(x){
-      let e=localStorage.getItem("rtl_v4_ep");
-      if(!e)return;
+      // ✅ กำหนด URL โดยตรง หาก LocalStorage ว่างเปล่า ให้ใช้ URL นี้ทันที
+      let defaultUrl = "https://script.google.com/macros/s/AKfycbxSyZCGE7meTYxQuoPPfgvGrXN_CxvNN0lsFf_7AvcaN6Lspq_-pCeWYnEsp0t2DaRiYw/exec";
+      let e = localStorage.getItem("rtl_v4_ep") || defaultUrl;
+      
       try{
-        await fetch(e,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(x)});
-      }catch(e){}
-    }
-
-    async function fetchCloudData(){
-      let e=$("ep").value.trim()||localStorage.getItem("rtl_v4_ep");
-      if(!e){
-        dash();
-        return;
+        await fetch(e, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(x)
+        });
+      }catch(err){
+        console.error("Sync error:", err);
       }
+    }
       $("sm").innerHTML='<div class="status hint">⏳ กำลังดึงข้อมูลนักเรียนทุกคนจาก Google Sheets...</div>';
       try{
         let res = await fetch(e, { method: "GET", redirect: "follow" });
@@ -388,8 +390,15 @@
       reset();
     }
 
-    $("ep").value="https://script.google.com/macros/s/AKfycbxSyZCGE7meTYxQuoPPfgvGrXN_CxvNN0lsFf_7AvcaN6Lspq_-pCeWYnEsp0t2DaRiYw/exec";
-localStorage.setItem("rtl_v4_ep", $("ep").value);
+   // ✅ กำหนดค่าเริ่มต้น URL ล็อกไว้ให้ทุกเครื่องส่งเข้า Sheets ได้ทันที
+    const DEFAULT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxSyZCGE7meTYxQuoPPfgvGrXN_CxvNN0lsFf_7AvcaN6Lspq_-pCeWYnEsp0t2DaRiYw/exec";
+    
+    let savedUrl = localStorage.getItem("rtl_v4_ep");
+    if(!savedUrl || savedUrl.indexOf("/exec") === -1){
+      localStorage.setItem("rtl_v4_ep", DEFAULT_WEB_APP_URL);
+      savedUrl = DEFAULT_WEB_APP_URL;
+    }
+    $("ep").value = savedUrl;
   </script>
 </body>
 </html>
