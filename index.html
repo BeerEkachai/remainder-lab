@@ -355,13 +355,13 @@
       dash();
     }
 
-    function dash(){
+   function dash(){
       let localData = rec();
       let a = cloudResults.length > 0 ? cloudResults : localData;
       let d=$("dash");
       if(!d)return;
       let u=new Set(a.map(x=>x.name+"|"+x.room+"|"+x.num)),avg=a.length?(a.reduce((s,x)=>s+Number(x.score||0),0)/a.length).toFixed(1):0;
-      d.innerHTML='<div class="stats"><div class="stat">👥 ผู้เรียน<strong>'+u.size+'</strong></div><div class="stat">🧪 ภารกิจ<strong>'+a.length+'</strong></div><div class="stat">⭐ คะแนนเฉลี่ย<strong>'+avg+'</strong></div><div class="stat">💡 คำใบ้<strong>'+a.reduce((s,x)=>s+Number(x.hints||0),0)+'</strong></div></div><div class="table"><table><thead><tr><th>รอบ</th><th>วันที่</th><th>ผู้เรียน</th><th>ห้อง</th><th>เลขที่</th><th>P(c)</th><th>ตัวประกอบ</th><th>ดีกรี Q</th><th>Q(x)</th><th>คำใบ้</th><th>คะแนน</th><th>เวลา</th></tr></thead><tbody>'+a.slice().reverse().map(x=>'<tr><td><b>'+(x.round||"-")+'</b></td><td>'+esc(x.date)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.room)+'</td><td>'+esc(x.num)+'</td><td>'+fmt(x.pc??0)+'</td><td>'+(x.factor?"✓":"-")+'</td><td>'+(x.degree??"-")+'</td><td>'+esc(x.q||"-")+'</td><td>'+(x.hints||0)+'</td><td><span class="badge">'+(x.score||0)+'</span></td><td>'+(x.time||0)+"s</td></tr>").join("")+"</tbody></table></div>";
+      d.innerHTML='<div class="stats"><div class="stat">👥 ผู้เรียน<strong>'+u.size+'</strong></div><div class="stat">🧪 ภารกิจ<strong>'+a.length+'</strong></div><div class="stat">⭐ คะแนนเฉลี่ย<strong>'+avg+'</strong></div><div class="stat">💡 คำใบ้<strong>'+a.reduce((s,x)=>s+Number(x.hints||0),0)+'</strong></div></div><div class="table"><table><thead><tr><th>รอบ</th><th>ผู้เรียน</th><th>ห้อง</th><th>เลขที่</th><th>P(c)</th><th>ตัวประกอบ</th><th>ดีกรี Q</th><th>Q(x)</th><th>คำใบ้</th><th>คะแนน</th><th>เวลา</th></tr></thead><tbody>'+a.slice().reverse().map(x=>'<tr><td><b>'+(x.round||"-")+'</b></td><td>'+esc(x.name)+'</td><td>'+esc(x.room)+'</td><td>'+esc(x.num)+'</td><td>'+fmt(x.pc??0)+'</td><td>'+(x.factor?"✓":"-")+'</td><td>'+(x.degree??"-")+'</td><td>'+esc(x.q||"-")+'</td><td>'+(x.hints||0)+'</td><td><span class="badge">'+(x.score||0)+'</span></td><td>'+(x.time||0)+"s</td></tr>").join("")+"</tbody></table></div>";
     }
 
     function esc(s){
