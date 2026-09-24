@@ -120,6 +120,8 @@
     let cloudResults = [];
     let isTeacherAuthed = false;
     let autoRefreshInterval = null;
+
+    // คะแนนรายข้อ (ขั้นที่ 1=2, ขั้นที่ 2=2, ขั้นที่ 3=2, ขั้นที่ 4=4 | รวมเต็ม 10 คะแนน)
     let scoreStep1 = 0, scoreStep2 = 2, scoreStep3 = 2, scoreStep4 = 4;
 
     const $=id=>document.getElementById(id);
@@ -229,6 +231,8 @@
       $("q").value="";
       $("ref").value="";
       hl=0;
+
+      // รีเซ็ตคะแนนสำหรับข้อใหม่
       scoreStep1 = 0;
       scoreStep2 = 2;
       scoreStep3 = 2;
@@ -260,7 +264,8 @@
       $("pco").className="status "+(Math.abs(S.pc)<1e-9?"ok":"");
       $("pco").innerHTML="🔎 P("+fmt(c)+") = <b>"+fmt(S.pc)+"</b>"+(Math.abs(S.pc)<1e-9?" — สืบเสาะต่อได้เลย":"");
       
-      scoreStep1 = Math.abs(S.pc)<1e-9 ? 1 : 0;
+      // ขั้นที่ 1 ได้ 2 คะแนน
+      scoreStep1 = Math.abs(S.pc)<1e-9 ? 2 : 0;
       updateTotalScore();
     }
 
@@ -378,34 +383,45 @@
       dash();
     }
 
+    // 📊 Dashboard แบบดั้งเดิม (ไม่มีคอลัมน์วันที่)
     function dash(){
-      let list = cloudResults.length > 0 ? cloudResults : rec();
-      if(list.length === 0){
-        $("dash").innerHTML = '<p class="small">ยังไม่มีข้อมูลส่งเข้ามา</p>';
-        return;
-      }
-      let html = '<div class="table"><table><thead><tr><th>เวลา</th><th>ชื่อ</th><th>ห้อง/เลขที่</th><th>คะแนน</th><th>เวลาใช้ไป (วิ)</th><th>P(x)</th><th>คำตอบ Q(x)</th></tr></thead><tbody>';
-      list.forEach(r => {
-        html += `<tr><td>${r.date||'-'}</td><td><b>${r.name||'-'}</b></td><td>${r.room||'-'} / ${r.num||'-'}</td><td><span class="badge">${r.score||0}</span></td><td>${r.time||0}</td><td>${r.poly||'-'}</td><td>${r.q||'-'}</td></tr>`;
-      });
-      html += '</tbody></table></div>';
-      $("dash").innerHTML = html;
+      let localData = rec();
+      let a = cloudResults.length > 0 ? cloudResults : localData;
+      let d=$("dash");
+      if(!d)return;
+      let u=new Set(a.map(x=>x.name+"|"+x.room+"|"+x.num)),avg=a.length?(a.reduce((s,x)=>s+Number(x.score||0),0)/a.length).toFixed(1):0;
+      d.innerHTML='<div class="stats"><div class="stat">👥 ผู้เรียน<strong>'+u.size+'</strong></div><div class="stat">🧪 ภารกิจ<strong>'+a.length+'</strong></div><div class="stat">⭐ คะแนนเฉลี่ย<strong>'+avg+'</strong></div><div class="stat">💡 คำใบ้<strong>'+a.reduce((s,x)=>s+Number(x.hints||0),0)+'</strong></div></div><div class="table"><table><thead><tr><th>รอบ</th><th>ผู้เรียน</th><th>ห้อง</th><th>เลขที่</th><th>P(c)</th><th>ตัวประกอบ</th><th>ดีกรี Q</th><th>Q(x)</th><th>คำใบ้</th><th>คะแนน</th><th>เวลา</th></tr></thead><tbody>'+a.slice().reverse().map(x=>'<tr><td><b>'+(x.round||x.attempts||1)+'</b></td><td>'+esc(x.name)+'</td><td>'+esc(x.room)+'</td><td>'+esc(x.num)+'</td><td>'+fmt(x.pc??0)+'</td><td>'+(x.factor?"✓":"-")+'</td><td>'+(x.degree??"-")+'</td><td>'+esc(x.q||"-")+'</td><td>'+(x.hints||0)+'</td><td><span class="badge">'+(x.score||0)+'</span></td><td>'+(x.time||0)+"s</td></tr>").join("")+"</tbody></table></div>";
+    }
+
+    function esc(s){
+      return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
     }
 
     function csv(){
-      let list = cloudResults.length > 0 ? cloudResults : rec();
-      if(list.length === 0){ alert("ไม่มีข้อมูลสำหรับส่งออก"); return; }
-      let csvContent = "data:text/csv;charset=utf-8,\uFEFF" + ["Date,Name,Room,Number,Score,Time(s),Poly,Q(x)"].concat(
-        list.map(r => `"${r.date||''}","${r.name||''}","${r.room||''}","${r.num||''}",${r.score||0},${r.time||0},"${r.poly||''}","${r.q||''}"`)
-      ).join("\n");
-      let encodedUri = encodeURI(csvContent);
-      let link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", "remainder_lab_results.csv");
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      if(!isTeacherAuthed){
+        let pwd = prompt("🔒 กรุณากรอกรหัสผ่านเพื่อดาวน์โหลดไฟล์ CSV:");
+        if(pwd !== TEACHER_PASSWORD){
+          alert("❌ รหัสผ่านไม่ถูกต้อง!");
+          return;
+        }
+        isTeacherAuthed = true;
+      }
+      let a = cloudResults.length > 0 ? cloudResults : rec();
+      if(!a.length){alert("ยังไม่มีข้อมูล");return}
+      let c=["round","date","name","room","num","poly","c","pc","factor","degree","q","hints","score","time","ref"],s="\ufeff"+c.join(",")+"\n"+a.map(x=>c.map(k=>'"'+String(x[k]??"").replaceAll('"','""')+'"').join(",")).join("\n"),u=URL.createObjectURL(new Blob([s],{type:"text/csv;charset=utf-8"})),z=document.createElement("a");
+      z.href=u;
+      z.download="Remainder_Theorem_Inquiry_Lab_results.csv";
+      z.click();
+      URL.revokeObjectURL(u);
     }
+
+    // กำหนดค่าเริ่มต้นช่วงโหลดหน้าเว็บ
+    let savedUrl = localStorage.getItem("rtl_v4_ep");
+    if(!savedUrl || savedUrl.indexOf("/exec") === -1){
+      localStorage.setItem("rtl_v4_ep", DEFAULT_WEB_APP_URL);
+      savedUrl = DEFAULT_WEB_APP_URL;
+    }
+    $("ep").value = savedUrl;
   </script>
 </body>
 </html>
