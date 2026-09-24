@@ -217,6 +217,9 @@
       reset();
     }
 
+   // ตัวแปรเก็บคะแนนรายข้อ (ขั้นที่ 1=2, ขั้นที่ 2=2, ขั้นที่ 3=2, ขั้นที่ 4=4 | รวมเต็ม 10)
+    let scoreStep1 = 0, scoreStep2 = 2, scoreStep3 = 2, scoreStep4 = 4;
+
     function reset(){
       ["s2","s3","s4","s5"].forEach(x=>$(x).classList.add("hidden"));
       $("fb").innerHTML="";
@@ -226,6 +229,84 @@
       $("q").value="";
       $("ref").value="";
       hl=0;
+
+      // รีเซ็ตคะแนนเต็มของแต่ละข้อในโจทย์ข้อใหม่
+      scoreStep1 = 0;
+      scoreStep2 = 2;
+      scoreStep3 = 2;
+      scoreStep4 = 4;
+    }
+
+    function pc(){
+      let a=parse($("poly").value),c=frac($("c").value);
+      if(!a||!Number.isFinite(c)){
+        $("fb").innerHTML='<div class="status err">ตรวจรูปแบบ P(x) และ c</div>';
+        return;
+      }
+      S.poly=$("poly").value;
+      S.c=$("c").value;
+      S.pc=ev(a,c);
+      S.attempts++;
+      $("s2").classList.remove("hidden");
+      $("pco").className="status "+(Math.abs(S.pc)<1e-9?"ok":"");
+      $("pco").innerHTML="🔎 P("+fmt(c)+") = <b>"+fmt(S.pc)+"</b>"+(Math.abs(S.pc)<1e-9?" — สืบเสาะต่อได้เลย":"");
+      
+      // ให้ 2 คะแนนเต็มเฉพาะตอน P(c)=0 และไม่บวกสะสมซ้ำ
+      if(Math.abs(S.pc)<1e-9){
+        scoreStep1 = 2;
+      } else {
+        scoreStep1 = 0;
+      }
+      updateTotalScore();
+    }
+
+    function factorCheck(){
+      if($("factor").value=="yes"){
+        $("s3").classList.remove("hidden");
+        $("fb").innerHTML='<div class="status ok">🎯 ถูกต้อง! เชื่อมโยง P(c)=0 กับตัวประกอบได้แล้ว</div>';
+      }else if($("factor").value){
+        // ตอบผิด: หัก 1 คะแนน (ไม่ต่ำกว่า 0)
+        scoreStep2 = Math.max(0, scoreStep2 - 1);
+        $("fb").innerHTML='<div class="status hint">💡 ยังไม่ถูกต้อง (ถูกหัก 1 คะแนน) เศษจากการหารเป็นศูนย์ ความสัมพันธ์คืออะไร?</div>';
+      }
+      updateTotalScore();
+    }
+
+    function degreeCheck(){
+      let a=parse(S.poly),v=Number($("dq").value);
+      S.degree=v;
+      if(v==a.length-2){
+        $("s4").classList.remove("hidden");
+        $("fb").innerHTML='<div class="status ok">📉 เยี่ยม! ดีกรีลดลง 1 ขั้น</div>';
+      }else{
+        // ตอบผิด: หัก 1 คะแนน (ไม่ต่ำกว่า 0)
+        scoreStep3 = Math.max(0, scoreStep3 - 1);
+        $("fb").innerHTML='<div class="status hint">💡 ยังไม่ถูกต้อง (ถูกหัก 1 คะแนน) ดีกรีของ (x−c)Q(x) เกี่ยวข้องกับดีกรีของ Q(x) อย่างไร?</div>';
+      }
+      updateTotalScore();
+    }
+
+    function qCheck(){
+      let a=parse(S.poly),c=frac(S.c),g=parse($("q").value);
+      if(!g){
+        $("hb").innerHTML='<div class="status err">กรุณาป้อน Q(x) เช่น x^2-5x+6</div>';
+        return;
+      }
+      S.q=$("q").value;
+      if(eq(g,syn(a,c))){
+        $("s5").classList.remove("hidden");
+        $("fb").innerHTML='<div class="status ok">🎉 Q(x) ถูกต้อง! คุณสร้างคำตอบด้วยกระบวนการของตนเองได้แล้ว</div>';
+      }else{
+        // ตอบผิด: หัก 1 คะแนน (ไม่ต่ำกว่า 0)
+        scoreStep4 = Math.max(0, scoreStep4 - 1);
+        $("hb").innerHTML='<div class="status hint">💡 ยังไม่ถูกต้อง (ถูกหัก 1 คะแนน) ตรวจการหารสังเคราะห์ทีละช่อง และตรวจสัมประสิทธิ์ของ Q(x)</div>';
+      }
+      updateTotalScore();
+    }
+
+    // ฟังก์ชันคำนวณคะแนนรวมทั้งหมด
+    function updateTotalScore(){
+      S.score = scoreStep1 + scoreStep2 + scoreStep3 + scoreStep4;
     }
 
     function pc(){
