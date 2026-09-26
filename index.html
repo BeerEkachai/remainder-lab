@@ -384,48 +384,35 @@
       dash();
     }
 
-    // 📊 Dashboard กรองวันที่ออกก่อนทำตาราง ถอดรหัสตำแหน่งเป๊ะ 100%
+    // 📊 Dashboard ตรงคีย์ภาษาไทย 100% กรองวันที่ออกสนิท
     function dash(){
       let localData = rec();
       let a = cloudResults.length > 0 ? cloudResults : localData;
       let d = $("dash");
       if(!d) return;
 
-      // Regular Expression ตรวจจับและลบข้อมูลที่เป็นรูปแบบวันที่/เวลา ออกทั้งหมด
-      const isDateStr = (s) => /^\d{4}-\d{2}-\d{2}|^\d{1,2}\/\d{1,2}\/\d{4}|T\d{2}:\d{2}/.test(String(s).trim());
-
       let parsedRows = a.map(x => {
-        let vals = Array.isArray(x) ? x : Object.values(x);
+        // ดึงจาก Key ภาษาไทย/อังกฤษ โดยตรง ไม่ผ่าน Array Index
+        let nameVal = x["ชื่อ"] || x["ผู้เรียน"] || x.name || "-";
         
-        // 🔒 กรองเอาข้อความที่เป็น วันที่ ออกไปอย่างเด็ดขาด
-        vals = vals.filter(v => !isDateStr(v));
-
-        let roundRaw = x.round || x.รอบ || x.attempts || vals[0] || "1";
-        let roundVal = String(roundRaw).replace(/รอบที่\s*/g, "").trim();
-
-        let nameVal = x.name || x.ชื่อ || x.ผู้เรียน || vals[1] || "-";
-
-        // ตรวจสอบช่องห้อง
-        let rawRoom = x.room || x.ห้อง || vals[2] || "-";
-        let roomVal = "-";
-        let numVal = "-";
-
-        if (rawRoom !== "-" && isNaN(rawRoom) && !isDateStr(rawRoom)) {
-          roomVal = rawRoom;
-          numVal = x.num || x.เลขที่ || vals[3] || "-";
-        } else {
-          // ถ้าช่องห้องเป็นตัวเลข แสดงว่าช่องนั้นคือเลขที่ (ไม่มีข้อมูลห้อง)
+        // ดึงห้อง: ถ้าหลุดเป็นวันที่มา ให้เป็น "-"
+        let roomVal = x["ห้อง"] || x.room || "-";
+        if (String(roomVal).includes("T") || String(roomVal).includes("202")) {
           roomVal = "-";
-          numVal = rawRoom !== "-" ? rawRoom : (x.num || x.เลขที่ || vals[3] || "-");
         }
 
-        let pcVal = x.pc ?? x["P(c)"] ?? vals[4] ?? 0;
-        let factorVal = (x.factor || x.ตัวประกอบ || vals[5]) ? "✓" : "-";
-        let degreeVal = x.degree ?? x["ดีกรี Q"] ?? vals[6] ?? "-";
-        let qVal = x.q || x["Q(x)"] || vals[7] || "-";
-        let hintsVal = x.hints || x.คำใบ้ || vals[8] || 0;
-        let scoreVal = x.score || x.คะแนน || vals[9] || 0;
-        let timeVal = x.time || x.เวลา || vals[10] || 0;
+        let numVal = x["เลขที่"] || x.num || "-";
+
+        let roundRaw = x["รอบ"] || x.round || x.attempts || "1";
+        let roundVal = String(roundRaw).replace(/รอบที่\s*/g, "").trim();
+
+        let pcVal = x["P(c)"] ?? x.pc ?? 0;
+        let factorVal = (x["ตัวประกอบ"] || x.factor) ? "✓" : "-";
+        let degreeVal = x["ดีกรี Q"] ?? x.degree ?? "-";
+        let qVal = x["Q(x)"] || x.q || "-";
+        let hintsVal = x["คำใบ้"] || x.hints || 0;
+        let scoreVal = x["คะแนน"] || x.score || 0;
+        let timeVal = x["เวลา"] || x.time || 0;
 
         return {
           round: roundVal,
