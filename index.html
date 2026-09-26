@@ -384,34 +384,40 @@
       dash();
     }
 
-    // 📊 Dashboard สมบูรณ์แบบ คัดกรองและสกัดคอลัมน์ถูกต้อง 100%
+    // 📊 Dashboard กรองวันที่ออกก่อนทำตาราง ถอดรหัสตำแหน่งเป๊ะ 100%
     function dash(){
       let localData = rec();
       let a = cloudResults.length > 0 ? cloudResults : localData;
       let d = $("dash");
       if(!d) return;
 
+      // Regular Expression ตรวจจับและลบข้อมูลที่เป็นรูปแบบวันที่/เวลา ออกทั้งหมด
+      const isDateStr = (s) => /^\d{4}-\d{2}-\d{2}|^\d{1,2}\/\d{1,2}\/\d{4}|T\d{2}:\d{2}/.test(String(s).trim());
+
       let parsedRows = a.map(x => {
         let vals = Array.isArray(x) ? x : Object.values(x);
         
-        // 1. สกัดวันที่ออกจากชุด Array เพื่อไม่ให้ขัดจังหวะการจัดคอลัมน์
-        vals = vals.filter(v => {
-          let str = String(v);
-          return !str.includes("T") && !str.includes("Z") && !str.includes("2026-") && !str.includes("2025-");
-        });
+        // 🔒 กรองเอาข้อความที่เป็น วันที่ ออกไปอย่างเด็ดขาด
+        vals = vals.filter(v => !isDateStr(v));
 
-        // 2. แกะค่าตามประเภทข้อมูล
         let roundRaw = x.round || x.รอบ || x.attempts || vals[0] || "1";
         let roundVal = String(roundRaw).replace(/รอบที่\s*/g, "").trim();
 
         let nameVal = x.name || x.ชื่อ || x.ผู้เรียน || vals[1] || "-";
 
-        // คัดกรองช่องห้อง: ถ้าช่องนั้นเป็นตัวเลขล้วน แสดงว่าเป็นเลขที่ (ไม่มีข้อมูลห้อง) ให้ปรับเป็น "-"
+        // ตรวจสอบช่องห้อง
         let rawRoom = x.room || x.ห้อง || vals[2] || "-";
-        let roomVal = (rawRoom !== "-" && !isNaN(rawRoom)) ? "-" : rawRoom;
+        let roomVal = "-";
+        let numVal = "-";
 
-        // ถ้าห้องไม่มี ให้เอาตัวเลขช่องนั้นมาใส่เป็นเลขที่แทน
-        let numVal = x.num || x.เลขที่ || (rawRoom !== "-" && !isNaN(rawRoom) ? rawRoom : vals[3]) || "-";
+        if (rawRoom !== "-" && isNaN(rawRoom) && !isDateStr(rawRoom)) {
+          roomVal = rawRoom;
+          numVal = x.num || x.เลขที่ || vals[3] || "-";
+        } else {
+          // ถ้าช่องห้องเป็นตัวเลข แสดงว่าช่องนั้นคือเลขที่ (ไม่มีข้อมูลห้อง)
+          roomVal = "-";
+          numVal = rawRoom !== "-" ? rawRoom : (x.num || x.เลขที่ || vals[3] || "-");
+        }
 
         let pcVal = x.pc ?? x["P(c)"] ?? vals[4] ?? 0;
         let factorVal = (x.factor || x.ตัวประกอบ || vals[5]) ? "✓" : "-";
