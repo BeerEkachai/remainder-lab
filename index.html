@@ -372,11 +372,16 @@
       try{
         let res = await fetch(e, { method: "GET", redirect: "follow" });
         let data = await res.json();
-        if(Array.isArray(data)){
-          cloudResults = data;
-          $("sm").innerHTML='<div class="status ok">✅ ดึงข้อมูลสำเร็จ! พบ ' + data.length + ' รายการจากศูนย์กลาง</div>';
+        
+        // รองรับข้อมูลทั้งแบบ {data: [...]} และ [...] ตรงๆ
+        let rows = Array.isArray(data) ? data : (data.data || data.rows || []);
+        
+        if(Array.isArray(rows) && rows.length > 0){
+          cloudResults = rows;
+          $("sm").innerHTML='<div class="status ok">✅ ดึงข้อมูลสำเร็จ! พบ ' + rows.length + ' รายการจากศูนย์กลาง</div>';
         } else {
-          $("sm").innerHTML='<div class="status hint">ยังไม่มีข้อมูลใน Google Sheets</div>';
+          cloudResults = [];
+          $("sm").innerHTML='<div class="status hint">ยังไม่มีข้อมูลใน Google Sheets หรือข้อมูลอยู่ในรูปแบบใหม่</div>';
         }
       }catch(err){
         $("sm").innerHTML='<div class="status err">❌ ไม่สามารถดึงข้อมูลได้ กรุณาตรวจสอบลิงก์ Web App</div>';
@@ -384,7 +389,7 @@
       dash();
     }
 
-    // 📊 Dashboard ตรงตามโครงสร้าง Google Sheets จริง 100% (ข้าม x[0] ที่เป็นวันที่)
+    // 📊 Dashboard ดึงได้ทุกโครงสร้างข้อมูล
     function dash(){
       let localData = rec();
       let a = cloudResults.length > 0 ? cloudResults : localData;
@@ -392,8 +397,11 @@
       if(!d) return;
 
       let parsedRows = a.map(x => {
-        // หากส่งมาเป็น Array จาก Google Sheets
+        // กรณีดึงจาก Google Sheets มาเป็น Array
         if (Array.isArray(x)) {
+          // ข้ามแถวที่เป็นหัวตารางถ้าติดมา
+          if (x[0] === "Timestamp" || x[1] === "round") return null;
+
           let roundRaw = x[1] || "1";
           let roundVal = String(roundRaw).replace(/รอบที่\s*/g, "").trim();
 
@@ -412,7 +420,7 @@
           };
         }
 
-        // หากส่งมาเป็น Object (ดึงตรงตาม Key)
+        // กรณีเป็น Object
         let roundRaw = x.round || x["รอบ"] || x.attempts || "1";
         let roundVal = String(roundRaw).replace(/รอบที่\s*/g, "").trim();
 
@@ -429,7 +437,7 @@
           score: x.score || x["คะแนน"] || 0,
           time: x.time || x["เวลา"] || 0
         };
-      });
+      }).filter(Boolean); // กรองค่า null ออก
 
       let u = new Set(parsedRows.map(x => x.name + "|" + x.room + "|" + x.num));
       let avg = parsedRows.length ? (parsedRows.reduce((s, x) => s + Number(x.score || 0), 0) / parsedRows.length).toFixed(1) : 0;
