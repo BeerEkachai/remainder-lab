@@ -373,7 +373,6 @@
         let res = await fetch(e, { method: "GET", redirect: "follow" });
         let data = await res.json();
         
-        // รองรับข้อมูลทั้งแบบ {data: [...]} และ [...] ตรงๆ
         let rows = Array.isArray(data) ? data : (data.data || data.rows || []);
         
         if(Array.isArray(rows) && rows.length > 0){
@@ -389,7 +388,6 @@
       dash();
     }
 
-    // 📊 Dashboard ดึงได้ทุกโครงสร้างข้อมูล
     function dash(){
       let localData = rec();
       let a = cloudResults.length > 0 ? cloudResults : localData;
@@ -397,9 +395,7 @@
       if(!d) return;
 
       let parsedRows = a.map(x => {
-        // กรณีดึงจาก Google Sheets มาเป็น Array
         if (Array.isArray(x)) {
-          // ข้ามแถวที่เป็นหัวตารางถ้าติดมา
           if (x[0] === "Timestamp" || x[1] === "round") return null;
 
           let roundRaw = x[1] || "1";
@@ -420,7 +416,6 @@
           };
         }
 
-        // กรณีเป็น Object
         let roundRaw = x.round || x["รอบ"] || x.attempts || "1";
         let roundVal = String(roundRaw).replace(/รอบที่\s*/g, "").trim();
 
@@ -437,7 +432,7 @@
           score: x.score || x["คะแนน"] || 0,
           time: x.time || x["เวลา"] || 0
         };
-      }).filter(Boolean); // กรองค่า null ออก
+      }).filter(Boolean);
 
       let u = new Set(parsedRows.map(x => x.name + "|" + x.room + "|" + x.num));
       let avg = parsedRows.length ? (parsedRows.reduce((s, x) => s + Number(x.score || 0), 0) / parsedRows.length).toFixed(1) : 0;
@@ -491,12 +486,9 @@
       URL.revokeObjectURL(u);
     }
 
-    let savedUrl = localStorage.getItem("rtl_v4_ep");
-    if(!savedUrl || savedUrl.indexOf("/exec") === -1){
-      localStorage.setItem("rtl_v4_ep", DEFAULT_WEB_APP_URL);
-      savedUrl = DEFAULT_WEB_APP_URL;
-    }
-    $("ep").value = savedUrl;
+    // อัปเดตให้ดึง DEFAULT_WEB_APP_URL เสมอเพื่อป้องกันเบราว์เซอร์จำ URL เก่าค้าง
+    localStorage.setItem("rtl_v4_ep", DEFAULT_WEB_APP_URL);
+    $("ep").value = DEFAULT_WEB_APP_URL;
   </script>
 </body>
 </html>
