@@ -384,7 +384,7 @@
       dash();
     }
 
-// 📊 Dashboard แก้ปัญหาวันที่โผล่และคอลัมน์สลับตำแหน่ง 100%
+// 📊 Dashboard แบบตรงตามโครงสร้าง Google Sheets จริง 100%
     function dash(){
       let localData = rec();
       let a = cloudResults.length > 0 ? cloudResults : localData;
@@ -392,45 +392,25 @@
       if(!d) return;
 
       let parsedRows = a.map(x => {
-        // กรณีส่งมาเป็น Array แถวตรงๆ จาก Sheets
-        if (Array.isArray(x)) {
-          return {
-            round: x[0] || 1,
-            name: x[2] || "-",
-            room: x[3] || "-",
-            num: x[4] || "-",
-            pc: x[5] ?? 0,
-            factor: x[6] ? "✓" : "-",
-            degree: x[7] ?? "-",
-            q: x[8] || "-",
-            hints: x[9] || 0,
-            score: x[10] || 0,
-            time: x[11] || 0
-          };
-        }
-
-        // กรณีส่งมาเป็น Object (ดึงตาม Key ตรงๆ)
-        let roundVal = x.round || x.รอบ || x.attempts || 1;
-        let nameVal = x.name || x.ชื่อ || x.ผู้เรียน || "-";
+        // ดึงค่านักเรียน
+        let nameVal = x.name || x.ชื่อ || x.ผู้เรียน || x[0] || "-";
         
-        // ดึงค่าห้องแบบป้องกันข้อมูลวันที่หลุดเข้ามา
-        let roomVal = x.room || x.ห้อง || "-";
-        if (typeof roomVal === "string" && (roomVal.includes("T") || roomVal.includes("Z") || roomVal.includes("202") || roomVal.includes(":"))) {
-          roomVal = x.num || x.เลขที่ || "-"; // ถ้าห้องกลายเป็นวันที่ ให้ข้ามไป
-        }
+        // ดึงค่ารอบ (จัดการไม่ให้ขึ้นคำว่า "รอบที่ รอบที่" ซ้ำ)
+        let rawRound = x.round || x.รอบ || x.attempts || x[1] || "1";
+        let roundVal = String(rawRound).replace(/รอบที่\s*/g, "").trim();
 
-        let numVal = x.num || x.เลขที่ || "-";
-        if (typeof numVal === "string" && (numVal.includes("T") || numVal.includes("Z") || numVal.includes("202"))) {
-          numVal = "-";
-        }
+        // ดึงค่าห้อง และเลขที่
+        let roomVal = x.room || x.ห้อง || x[2] || "-";
+        let numVal = x.num || x.เลขที่ || x[3] || "-";
 
-        let pcVal = x.pc ?? x["P(c)"] ?? 0;
-        let factorVal = (x.factor || x.ตัวประกอบ) ? "✓" : "-";
-        let degreeVal = x.degree ?? x["ดีกรี Q"] ?? "-";
-        let qVal = x.q || x["Q(x)"] || "-";
-        let hintsVal = x.hints || x.คำใบ้ || 0;
-        let scoreVal = x.score || x.คะแนน || 0;
-        let timeVal = x.time || x.เวลา || 0;
+        // ค่าคำนวณและคะแนน
+        let pcVal = x.pc ?? x["P(c)"] ?? x[4] ?? 0;
+        let factorVal = (x.factor || x.ตัวประกอบ || x[5]) ? "✓" : "-";
+        let degreeVal = x.degree ?? x["ดีกรี Q"] ?? x[6] ?? "-";
+        let qVal = x.q || x["Q(x)"] || x[7] || "-";
+        let hintsVal = x.hints || x.คำใบ้ || x[8] || 0;
+        let scoreVal = x.score || x.คะแนน || x[9] || 0;
+        let timeVal = x.time || x.เวลา || x[10] || 0;
 
         return {
           round: roundVal,
