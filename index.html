@@ -388,29 +388,39 @@
       dash();
     }
 
- // 📊 Dashboard ดึงข้อมูลตรงคอลัมน์ (ซ่อนวันที่)
+// 📊 Dashboard แบบซ่อนวันที่ และจัดคอลัมน์ให้อยู่ถูกช่อง 100%
     function dash(){
       let localData = rec();
       let a = cloudResults.length > 0 ? cloudResults : localData;
-      let d=$("dash");
-      if(!d)return;
-      let u=new Set(a.map(x=>x.name+"|"+(x.room||x.ห้อง||"")+"|"+(x.num||x.เลขที่||""))),
-          avg=a.length?(a.reduce((s,x)=>s+Number(x.score||x.คะแนน||0),0)/a.length).toFixed(1):0;
-      
-      d.innerHTML='<div class="stats">' +
-        '<div class="stat">👥 ผู้เรียน<strong>'+u.size+'</strong></div>' +
-        '<div class="stat">🧪 ภารกิจ<strong>'+a.length+'</strong></div>' +
-        '<div class="stat">⭐ คะแนนเฉลี่ย<strong>'+avg+'</strong></div>' +
-        '<div class="stat">💡 คำใบ้<strong>'+a.reduce((s,x)=>s+Number(x.hints||x.คำใบ้||0),0)+'</strong></div>' +
+      let d = $("dash");
+      if(!d) return;
+
+      // ฟังก์ชันช่วยดึงค่าห้อง ให้ข้ามข้อความที่เป็นวันที่/เวลา
+      function getCleanRoom(x){
+        let val = String(x.room || x.ห้อง || "").trim();
+        // ถ้าค่าที่ได้มาเป็นรูปแบบวันที่ ให้เปลี่ยนเป็น "-" แทน
+        if(val.includes("T") || val.includes("Z") || val.includes("202") || val.includes(":")){
+          return "-";
+        }
+        return val || "-";
+      }
+
+      let u = new Set(a.map(x => (x.name || x.ชื่อ || "") + "|" + getCleanRoom(x) + "|" + (x.num || x.เลขที่ || "")));
+      let avg = a.length ? (a.reduce((s, x) => s + Number(x.score || x.คะแนน || 0), 0) / a.length).toFixed(1) : 0;
+
+      d.innerHTML = '<div class="stats">' +
+        '<div class="stat">👥 ผู้เรียน<strong>' + u.size + '</strong></div>' +
+        '<div class="stat">🧪 ภารกิจ<strong>' + a.length + '</strong></div>' +
+        '<div class="stat">⭐ คะแนนเฉลี่ย<strong>' + avg + '</strong></div>' +
+        '<div class="stat">💡 คำใบ้<strong>' + a.reduce((s, x) => s + Number(x.hints || x.คำใบ้ || 0), 0) + '</strong></div>' +
         '</div>' +
         '<div class="table"><table><thead><tr>' +
         '<th>รอบ</th><th>ผู้เรียน</th><th>ห้อง</th><th>เลขที่</th><th>P(c)</th><th>ตัวประกอบ</th><th>ดีกรี Q</th><th>Q(x)</th><th>คำใบ้</th><th>คะแนน</th><th>เวลา</th>' +
         '</tr></thead><tbody>' +
         a.slice().reverse().map(x => {
-          // ดึงค่าให้ถูกต้อง ไม่ว่า Google Sheets จะส่งชื่อฟีลด์เป็นภาษาไทยหรืออังกฤษ
           let roundVal = x.round || x.รอบ || x.attempts || 1;
           let nameVal = x.name || x.ชื่อ || x.ผู้เรียน || "-";
-          let roomVal = x.room || x.ห้อง || "-";
+          let roomVal = getCleanRoom(x);
           let numVal = x.num || x.เลขที่ || "-";
           let pcVal = x.pc ?? x["P(c)"] ?? 0;
           let factorVal = (x.factor || x.ตัวประกอบ) ? "✓" : "-";
@@ -421,17 +431,17 @@
           let timeVal = x.time || x.เวลา || 0;
 
           return '<tr>' +
-            '<td><b>รอบที่ '+esc(roundVal)+'</b></td>' +
-            '<td>'+esc(nameVal)+'</td>' +
-            '<td>'+esc(roomVal)+'</td>' +
-            '<td>'+esc(numVal)+'</td>' +
-            '<td>'+fmt(pcVal)+'</td>' +
-            '<td>'+factorVal+'</td>' +
-            '<td>'+esc(degreeVal)+'</td>' +
-            '<td>'+esc(qVal)+'</td>' +
-            '<td>'+hintsVal+'</td>' +
-            '<td><span class="badge">'+scoreVal+'</span></td>' +
-            '<td>'+timeVal+'s</td>' +
+            '<td><b>รอบที่ ' + esc(roundVal) + '</b></td>' +
+            '<td>' + esc(nameVal) + '</td>' +
+            '<td>' + esc(roomVal) + '</td>' +
+            '<td>' + esc(numVal) + '</td>' +
+            '<td>' + fmt(pcVal) + '</td>' +
+            '<td>' + factorVal + '</td>' +
+            '<td>' + esc(degreeVal) + '</td>' +
+            '<td>' + esc(qVal) + '</td>' +
+            '<td>' + hintsVal + '</td>' +
+            '<td><span class="badge">' + scoreVal + '</span></td>' +
+            '<td>' + timeVal + 's</td>' +
             '</tr>';
         }).join("") +
         '</tbody></table></div>';
