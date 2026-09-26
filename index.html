@@ -387,37 +387,77 @@
       dash();
     }
 
-    // 🎯 ฟังก์ชัน Dashboard ปรับจับ Index ตาม Google Sheet ของคุณครูโดยตรง
+    // 🎯 ระบบ Dynamic Column Matching: ค้นหาหัวตารางและแมปคอลัมน์อัตโนมัติ 100%
     function dash(){
       let localData = rec();
       let a = cloudResults.length > 0 ? cloudResults : localData;
       let d = $("dash");
       if(!d) return;
 
-      let parsedRows = a.map((x, idx) => {
-        if (Array.isArray(x)) {
-          // ข้ามแถวหัวตาราง
-          if (String(x[0]).includes("Timestamp") || String(x[1]).includes("ชื่อ")) return null;
+      // ค้นหาตำแหน่ง Index จากแถวหัวตาราง (ถ้ามี)
+      let idxName = -1, idxRoom = -1, idxNum = -1, idxPc = -1, idxFactor = -1, idxDegree = -1, idxQ = -1, idxHints = -1, idxScore = -1, idxTime = -1;
 
-          let scoreVal = Number(x[10]);
+      let dataRows = [];
+
+      a.forEach((x) => {
+        if (Array.isArray(x)) {
+          let strRow = x.map(c => String(c).toLowerCase().trim());
+          
+          // ตรวจสอบว่าเป็นแถวหัวตารางหรือไม่
+          if (strRow.some(c => c.includes("ผู้เรียน") || c.includes("ชื่อ") || c.includes(" timestamp"))) {
+            strRow.forEach((col, i) => {
+              if (col.includes("ชื่อ") || col.includes("ผู้เรียน")) idxName = i;
+              else if (col.includes("ห้อง")) idxRoom = i;
+              else if (col.includes("เลขที่")) idxNum = i;
+              else if (col.includes("p(c)")) idxPc = i;
+              else if (col.includes("ตัวประกอบ")) idxFactor = i;
+              else if (col.includes("ดีกรี")) idxDegree = i;
+              else if (col.includes("q(x)")) idxQ = i;
+              else if (col.includes("คำใบ้")) idxHints = i;
+              else if (col.includes("คะแนน")) idxScore = i;
+              else if (col.includes("เวลา")) idxTime = i;
+            });
+            return; // ข้ามแถวหัวตาราง
+          }
+          dataRows.push(x);
+        } else {
+          dataRows.push(x);
+        }
+      });
+
+      // กำหนดค่า Default fallback หากหาไม่เจอ
+      if (idxName === -1) idxName = 2;
+      if (idxRoom === -1) idxRoom = 3;
+      if (idxNum === -1) idxNum = 4;
+      if (idxPc === -1) idxPc = 5;
+      if (idxFactor === -1) idxFactor = 6;
+      if (idxDegree === -1) idxDegree = 7;
+      if (idxQ === -1) idxQ = 8;
+      if (idxHints === -1) idxHints = 9;
+      if (idxScore === -1) idxScore = 10;
+      if (idxTime === -1) idxTime = 11;
+
+      let parsedRows = dataRows.map((x, idx) => {
+        if (Array.isArray(x)) {
+          let scoreVal = parseFloat(x[idxScore]);
           if(isNaN(scoreVal)) scoreVal = 0;
 
           return {
             round: idx + 1,
-            name: x[1] || "-",
-            room: x[2] || "-",
-            num: x[3] || "-",
-            pc: x[4] ?? "-",
-            factor: (x[5] === "true" || x[5] === true || x[5] === "✓") ? "✓" : "-",
-            degree: x[6] ?? "-",
-            q: x[9] || "-",
-            hints: x[8] || 0,
+            name: x[idxName] || "-",
+            room: x[idxRoom] || "-",
+            num: x[idxNum] || "-",
+            pc: x[idxPc] ?? "-",
+            factor: (x[idxFactor] === "true" || x[idxFactor] === true || x[idxFactor] === "✓") ? "✓" : "-",
+            degree: x[idxDegree] ?? "-",
+            q: x[idxQ] || "-",
+            hints: x[idxHints] || 0,
             score: scoreVal,
-            time: x[11] || 0
+            time: x[idxTime] || 0
           };
         }
 
-        let scoreVal = Number(x.score);
+        let scoreVal = parseFloat(x.score);
         if(isNaN(scoreVal)) scoreVal = 0;
 
         return {
@@ -446,11 +486,11 @@
         '<div class="stat">💡 คำใบ้<strong>' + parsedRows.reduce((s, x) => s + Number(x.hints || 0), 0) + '</strong></div>' +
         '</div>' +
         '<div class="table"><table><thead><tr>' +
-        '<th>ลำดับ</th><th>ผู้เรียน</th><th>ห้อง</th><th>เลขที่</th><th>P(c)</th><th>ตัวประกอบ</th><th>ดีกรี Q</th><th>Q(x)</th><th>คำใบ้</th><th>คะแนน</th><th>เวลา</th>' +
+        '<th>รอบ</th><th>ผู้เรียน</th><th>ห้อง</th><th>เลขที่</th><th>P(c)</th><th>ตัวประกอบ</th><th>ดีกรี Q</th><th>Q(x)</th><th>คำใบ้</th><th>คะแนน</th><th>เวลา</th>' +
         '</tr></thead><tbody>' +
         parsedRows.slice().reverse().map(x => {
           return '<tr>' +
-            '<td><b>' + esc(x.round) + '</b></td>' +
+            '<td><b>รอบที่ ' + esc(x.round) + '</b></td>' +
             '<td>' + esc(x.name) + '</td>' +
             '<td>' + esc(x.room) + '</td>' +
             '<td>' + esc(x.num) + '</td>' +
