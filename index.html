@@ -318,11 +318,16 @@
       $("hb").innerHTML='<div class="status hint">💡 '+m+"</div>";
     }
 
-    function finish(){
+   function finish(){
       S.ref=$("ref").value.trim();
       S.time=Math.round((Date.now()-S.start)/1000);
       S.date=new Date().toLocaleString("th-TH");
+      
       let a=rec();
+      // 💡 คำนวณนับรอบจริงของนักเรียนคนนี้จากประวัติเดิม
+      let myPreviousRuns = a.filter(x => x.name === S.name && x.room === S.room && x.num === S.num);
+      S.round = myPreviousRuns.length + 1;
+
       a.push({...S});
       localStorage.setItem("rtl_v4_results",JSON.stringify(a));
       trySync(S);
