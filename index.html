@@ -384,7 +384,7 @@
       dash();
     }
 
-// 📊 Dashboard แบบตรงตามโครงสร้าง Google Sheets จริง 100%
+    // 📊 Dashboard สมบูรณ์แบบ คัดกรองและสกัดคอลัมน์ถูกต้อง 100%
     function dash(){
       let localData = rec();
       let a = cloudResults.length > 0 ? cloudResults : localData;
@@ -392,25 +392,34 @@
       if(!d) return;
 
       let parsedRows = a.map(x => {
-        // ดึงค่านักเรียน
-        let nameVal = x.name || x.ชื่อ || x.ผู้เรียน || x[0] || "-";
+        let vals = Array.isArray(x) ? x : Object.values(x);
         
-        // ดึงค่ารอบ (จัดการไม่ให้ขึ้นคำว่า "รอบที่ รอบที่" ซ้ำ)
-        let rawRound = x.round || x.รอบ || x.attempts || x[1] || "1";
-        let roundVal = String(rawRound).replace(/รอบที่\s*/g, "").trim();
+        // 1. สกัดวันที่ออกจากชุด Array เพื่อไม่ให้ขัดจังหวะการจัดคอลัมน์
+        vals = vals.filter(v => {
+          let str = String(v);
+          return !str.includes("T") && !str.includes("Z") && !str.includes("2026-") && !str.includes("2025-");
+        });
 
-        // ดึงค่าห้อง และเลขที่
-        let roomVal = x.room || x.ห้อง || x[2] || "-";
-        let numVal = x.num || x.เลขที่ || x[3] || "-";
+        // 2. แกะค่าตามประเภทข้อมูล
+        let roundRaw = x.round || x.รอบ || x.attempts || vals[0] || "1";
+        let roundVal = String(roundRaw).replace(/รอบที่\s*/g, "").trim();
 
-        // ค่าคำนวณและคะแนน
-        let pcVal = x.pc ?? x["P(c)"] ?? x[4] ?? 0;
-        let factorVal = (x.factor || x.ตัวประกอบ || x[5]) ? "✓" : "-";
-        let degreeVal = x.degree ?? x["ดีกรี Q"] ?? x[6] ?? "-";
-        let qVal = x.q || x["Q(x)"] || x[7] || "-";
-        let hintsVal = x.hints || x.คำใบ้ || x[8] || 0;
-        let scoreVal = x.score || x.คะแนน || x[9] || 0;
-        let timeVal = x.time || x.เวลา || x[10] || 0;
+        let nameVal = x.name || x.ชื่อ || x.ผู้เรียน || vals[1] || "-";
+
+        // คัดกรองช่องห้อง: ถ้าช่องนั้นเป็นตัวเลขล้วน แสดงว่าเป็นเลขที่ (ไม่มีข้อมูลห้อง) ให้ปรับเป็น "-"
+        let rawRoom = x.room || x.ห้อง || vals[2] || "-";
+        let roomVal = (rawRoom !== "-" && !isNaN(rawRoom)) ? "-" : rawRoom;
+
+        // ถ้าห้องไม่มี ให้เอาตัวเลขช่องนั้นมาใส่เป็นเลขที่แทน
+        let numVal = x.num || x.เลขที่ || (rawRoom !== "-" && !isNaN(rawRoom) ? rawRoom : vals[3]) || "-";
+
+        let pcVal = x.pc ?? x["P(c)"] ?? vals[4] ?? 0;
+        let factorVal = (x.factor || x.ตัวประกอบ || vals[5]) ? "✓" : "-";
+        let degreeVal = x.degree ?? x["ดีกรี Q"] ?? vals[6] ?? "-";
+        let qVal = x.q || x["Q(x)"] || vals[7] || "-";
+        let hintsVal = x.hints || x.คำใบ้ || vals[8] || 0;
+        let scoreVal = x.score || x.คะแนน || vals[9] || 0;
+        let timeVal = x.time || x.เวลา || vals[10] || 0;
 
         return {
           round: roundVal,
