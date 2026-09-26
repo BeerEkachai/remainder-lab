@@ -380,7 +380,7 @@
           $("sm").innerHTML='<div class="status ok">✅ ดึงข้อมูลสำเร็จ! พบ ' + rows.length + ' รายการจากศูนย์กลาง</div>';
         } else {
           cloudResults = [];
-          $("sm").innerHTML='<div class="status hint">ยังไม่มีข้อมูลใน Google Sheets หรือข้อมูลอยู่ในรูปแบบใหม่</div>';
+          $("sm").innerHTML='<div class="status hint">ยังไม่มีข้อมูลใน Google Sheets</div>';
         }
       }catch(err){
         $("sm").innerHTML='<div class="status err">❌ ไม่สามารถดึงข้อมูลได้ กรุณาตรวจสอบลิงก์ Web App</div>';
@@ -396,6 +396,7 @@
 
       let parsedRows = a.map(x => {
         if (Array.isArray(x)) {
+          // หากแถวแรกหลุดหัวตารางมา
           if (x[0] === "Timestamp" || x[1] === "round") return null;
 
           let roundRaw = x[1] || "1";
@@ -432,7 +433,7 @@
           score: x.score || x["คะแนน"] || 0,
           time: x.time || x["เวลา"] || 0
         };
-      }).filter(Boolean);
+      }).filter(x => x && x.name !== "-");
 
       let u = new Set(parsedRows.map(x => x.name + "|" + x.room + "|" + x.num));
       let avg = parsedRows.length ? (parsedRows.reduce((s, x) => s + Number(x.score || 0), 0) / parsedRows.length).toFixed(1) : 0;
@@ -486,7 +487,6 @@
       URL.revokeObjectURL(u);
     }
 
-    // อัปเดตให้ดึง DEFAULT_WEB_APP_URL เสมอเพื่อป้องกันเบราว์เซอร์จำ URL เก่าค้าง
     localStorage.setItem("rtl_v4_ep", DEFAULT_WEB_APP_URL);
     $("ep").value = DEFAULT_WEB_APP_URL;
   </script>
