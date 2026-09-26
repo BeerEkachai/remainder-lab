@@ -384,35 +384,53 @@
       dash();
     }
 
- // 📊 Dashboard อัจฉริยะ ตรวจจับคอลัมน์ห้องอัตโนมัติ (ซ่อนวันที่แน่นอน 100%)
+// 📊 Dashboard แก้ปัญหาวันที่โผล่และคอลัมน์สลับตำแหน่ง 100%
     function dash(){
       let localData = rec();
       let a = cloudResults.length > 0 ? cloudResults : localData;
       let d = $("dash");
       if(!d) return;
 
-      // ฟังก์ชันแปลงแถวข้อมูล ไม่ว่าจะส่งมาแบบไหน ให้ดึงเฉพาะข้อมูลที่ถูกต้อง
       let parsedRows = a.map(x => {
-        let values = Array.isArray(x) ? x : Object.values(x);
-        
-        // ค้นหาค่าห้องจริง โดยวนดูค่าทั้งหมดที่ไม่ใช่วันที่/เวลา และไม่ใช่ชื่อนักเรียน
-        let roundVal = x.round || x.รอบ || x.attempts || values[0] || 1;
-        let nameVal = x.name || x.ชื่อ || x.ผู้เรียน || values.find(v => typeof v === 'string' && v.length > 3 && !v.includes("T") && !v.includes("202") && !v.includes("ม.")) || "-";
-        
-        // ค้นหาช่องที่มีคำว่า ม. หรือเป็นข้อความห้องเรียน
-        let roomVal = x.room || x.ห้อง;
-        if (!roomVal || String(roomVal).includes("T") || String(roomVal).includes("202")) {
-          roomVal = values.find(v => typeof v === 'string' && (v.includes("ม.") || v.includes("/") || v.length < 10) && !v.includes("T") && !v.includes("202") && !v.includes(":")) || "-";
+        // กรณีส่งมาเป็น Array แถวตรงๆ จาก Sheets
+        if (Array.isArray(x)) {
+          return {
+            round: x[0] || 1,
+            name: x[2] || "-",
+            room: x[3] || "-",
+            num: x[4] || "-",
+            pc: x[5] ?? 0,
+            factor: x[6] ? "✓" : "-",
+            degree: x[7] ?? "-",
+            q: x[8] || "-",
+            hints: x[9] || 0,
+            score: x[10] || 0,
+            time: x[11] || 0
+          };
         }
 
-        let numVal = x.num || x.เลขที่ || values[4] || "-";
-        let pcVal = x.pc ?? x["P(c)"] ?? values[5] ?? 0;
-        let factorVal = (x.factor || x.ตัวประกอบ || values[6]) ? "✓" : "-";
-        let degreeVal = x.degree ?? x["ดีกรี Q"] ?? values[7] ?? "-";
-        let qVal = x.q || x["Q(x)"] || values[8] || "-";
-        let hintsVal = x.hints || x.คำใบ้ || values[9] || 0;
-        let scoreVal = x.score || x.คะแนน || values[10] || 0;
-        let timeVal = x.time || x.เวลา || values[11] || 0;
+        // กรณีส่งมาเป็น Object (ดึงตาม Key ตรงๆ)
+        let roundVal = x.round || x.รอบ || x.attempts || 1;
+        let nameVal = x.name || x.ชื่อ || x.ผู้เรียน || "-";
+        
+        // ดึงค่าห้องแบบป้องกันข้อมูลวันที่หลุดเข้ามา
+        let roomVal = x.room || x.ห้อง || "-";
+        if (typeof roomVal === "string" && (roomVal.includes("T") || roomVal.includes("Z") || roomVal.includes("202") || roomVal.includes(":"))) {
+          roomVal = x.num || x.เลขที่ || "-"; // ถ้าห้องกลายเป็นวันที่ ให้ข้ามไป
+        }
+
+        let numVal = x.num || x.เลขที่ || "-";
+        if (typeof numVal === "string" && (numVal.includes("T") || numVal.includes("Z") || numVal.includes("202"))) {
+          numVal = "-";
+        }
+
+        let pcVal = x.pc ?? x["P(c)"] ?? 0;
+        let factorVal = (x.factor || x.ตัวประกอบ) ? "✓" : "-";
+        let degreeVal = x.degree ?? x["ดีกรี Q"] ?? "-";
+        let qVal = x.q || x["Q(x)"] || "-";
+        let hintsVal = x.hints || x.คำใบ้ || 0;
+        let scoreVal = x.score || x.คะแนน || 0;
+        let timeVal = x.time || x.เวลา || 0;
 
         return {
           round: roundVal,
