@@ -384,71 +384,76 @@
       dash();
     }
 
-    // 📊 Dashboard สกัดเฉพาะคอลัมน์ที่ต้องการ (ซ่อนวันที่ออก 100%)
+ // 📊 Dashboard อัจฉริยะ ตรวจจับคอลัมน์ห้องอัตโนมัติ (ซ่อนวันที่แน่นอน 100%)
     function dash(){
       let localData = rec();
       let a = cloudResults.length > 0 ? cloudResults : localData;
       let d = $("dash");
       if(!d) return;
 
-      // แปลงข้อมูลแต่ละแถวให้ดึงค่าตรงคอลัมน์แน่นอน ไม่ว่าจะส่งมาเป็น Object หรือ Array
+      // ฟังก์ชันแปลงแถวข้อมูล ไม่ว่าจะส่งมาแบบไหน ให้ดึงเฉพาะข้อมูลที่ถูกต้อง
       let parsedRows = a.map(x => {
-        if(Array.isArray(x)){
-          // หากส่งมาจาก Google Sheets เป็น Array แถว: [รอบ, วันที่, ชื่อ, ห้อง, เลขที่, pc, factor, degree, q, hints, score, time]
-          return {
-            round: x[0],
-            name: x[2],
-            room: x[3],
-            num: x[4],
-            pc: x[5],
-            factor: x[6],
-            degree: x[7],
-            q: x[8],
-            hints: x[9],
-            score: x[10],
-            time: x[11]
-          };
+        let values = Array.isArray(x) ? x : Object.values(x);
+        
+        // ค้นหาค่าห้องจริง โดยวนดูค่าทั้งหมดที่ไม่ใช่วันที่/เวลา และไม่ใช่ชื่อนักเรียน
+        let roundVal = x.round || x.รอบ || x.attempts || values[0] || 1;
+        let nameVal = x.name || x.ชื่อ || x.ผู้เรียน || values.find(v => typeof v === 'string' && v.length > 3 && !v.includes("T") && !v.includes("202") && !v.includes("ม.")) || "-";
+        
+        // ค้นหาช่องที่มีคำว่า ม. หรือเป็นข้อความห้องเรียน
+        let roomVal = x.room || x.ห้อง;
+        if (!roomVal || String(roomVal).includes("T") || String(roomVal).includes("202")) {
+          roomVal = values.find(v => typeof v === 'string' && (v.includes("ม.") || v.includes("/") || v.length < 10) && !v.includes("T") && !v.includes("202") && !v.includes(":")) || "-";
         }
-        return x;
+
+        let numVal = x.num || x.เลขที่ || values[4] || "-";
+        let pcVal = x.pc ?? x["P(c)"] ?? values[5] ?? 0;
+        let factorVal = (x.factor || x.ตัวประกอบ || values[6]) ? "✓" : "-";
+        let degreeVal = x.degree ?? x["ดีกรี Q"] ?? values[7] ?? "-";
+        let qVal = x.q || x["Q(x)"] || values[8] || "-";
+        let hintsVal = x.hints || x.คำใบ้ || values[9] || 0;
+        let scoreVal = x.score || x.คะแนน || values[10] || 0;
+        let timeVal = x.time || x.เวลา || values[11] || 0;
+
+        return {
+          round: roundVal,
+          name: nameVal,
+          room: roomVal,
+          num: numVal,
+          pc: pcVal,
+          factor: factorVal,
+          degree: degreeVal,
+          q: qVal,
+          hints: hintsVal,
+          score: scoreVal,
+          time: timeVal
+        };
       });
 
-      let u = new Set(parsedRows.map(x => (x.name || x.ชื่อ || "") + "|" + (x.room || x.ห้อง || "") + "|" + (x.num || x.เลขที่ || "")));
-      let avg = parsedRows.length ? (parsedRows.reduce((s, x) => s + Number(x.score || x.คะแนน || 0), 0) / parsedRows.length).toFixed(1) : 0;
+      let u = new Set(parsedRows.map(x => x.name + "|" + x.room + "|" + x.num));
+      let avg = parsedRows.length ? (parsedRows.reduce((s, x) => s + Number(x.score || 0), 0) / parsedRows.length).toFixed(1) : 0;
 
       d.innerHTML = '<div class="stats">' +
         '<div class="stat">👥 ผู้เรียน<strong>' + u.size + '</strong></div>' +
         '<div class="stat">🧪 ภารกิจ<strong>' + parsedRows.length + '</strong></div>' +
         '<div class="stat">⭐ คะแนนเฉลี่ย<strong>' + avg + '</strong></div>' +
-        '<div class="stat">💡 คำใบ้<strong>' + parsedRows.reduce((s, x) => s + Number(x.hints || x.คำใบ้ || 0), 0) + '</strong></div>' +
+        '<div class="stat">💡 คำใบ้<strong>' + parsedRows.reduce((s, x) => s + Number(x.hints || 0), 0) + '</strong></div>' +
         '</div>' +
         '<div class="table"><table><thead><tr>' +
         '<th>รอบ</th><th>ผู้เรียน</th><th>ห้อง</th><th>เลขที่</th><th>P(c)</th><th>ตัวประกอบ</th><th>ดีกรี Q</th><th>Q(x)</th><th>คำใบ้</th><th>คะแนน</th><th>เวลา</th>' +
         '</tr></thead><tbody>' +
         parsedRows.slice().reverse().map(x => {
-          let roundVal = x.round || x.รอบ || x.attempts || 1;
-          let nameVal = x.name || x.ชื่อ || x.ผู้เรียน || "-";
-          let roomVal = x.room || x.ห้อง || "-";
-          let numVal = x.num || x.เลขที่ || "-";
-          let pcVal = x.pc ?? x["P(c)"] ?? 0;
-          let factorVal = (x.factor || x.ตัวประกอบ) ? "✓" : "-";
-          let degreeVal = x.degree ?? x["ดีกรี Q"] ?? "-";
-          let qVal = x.q || x["Q(x)"] || "-";
-          let hintsVal = x.hints || x.คำใบ้ || 0;
-          let scoreVal = x.score || x.คะแนน || 0;
-          let timeVal = x.time || x.เวลา || 0;
-
           return '<tr>' +
-            '<td><b>รอบที่ ' + esc(roundVal) + '</b></td>' +
-            '<td>' + esc(nameVal) + '</td>' +
-            '<td>' + esc(roomVal) + '</td>' +
-            '<td>' + esc(numVal) + '</td>' +
-            '<td>' + fmt(pcVal) + '</td>' +
-            '<td>' + factorVal + '</td>' +
-            '<td>' + esc(degreeVal) + '</td>' +
-            '<td>' + esc(qVal) + '</td>' +
-            '<td>' + hintsVal + '</td>' +
-            '<td><span class="badge">' + scoreVal + '</span></td>' +
-            '<td>' + timeVal + 's</td>' +
+            '<td><b>รอบที่ ' + esc(x.round) + '</b></td>' +
+            '<td>' + esc(x.name) + '</td>' +
+            '<td>' + esc(x.room) + '</td>' +
+            '<td>' + esc(x.num) + '</td>' +
+            '<td>' + fmt(x.pc) + '</td>' +
+            '<td>' + x.factor + '</td>' +
+            '<td>' + esc(x.degree) + '</td>' +
+            '<td>' + esc(x.q) + '</td>' +
+            '<td>' + x.hints + '</td>' +
+            '<td><span class="badge">' + x.score + '</span></td>' +
+            '<td>' + x.time + 's</td>' +
             '</tr>';
         }).join("") +
         '</tbody></table></div>';
