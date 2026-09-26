@@ -388,6 +388,7 @@
       dash();
     }
 
+    // 📊 Dashboard ปรับให้รองรับ Array โดยตรง
     function dash(){
       let localData = rec();
       let a = cloudResults.length > 0 ? cloudResults : localData;
@@ -396,14 +397,11 @@
 
       let parsedRows = a.map(x => {
         if (Array.isArray(x)) {
-          // หากแถวแรกหลุดหัวตารางมา
-          if (x[0] === "Timestamp" || x[1] === "round") return null;
-
-          let roundRaw = x[1] || "1";
-          let roundVal = String(roundRaw).replace(/รอบที่\s*/g, "").trim();
+          // ถ้าแถวแรกสุดติดคำว่า Timestamp หรือ round มาให้ข้าม
+          if (String(x[0]).includes("Timestamp") || String(x[1]).includes("round")) return null;
 
           return {
-            round: roundVal,
+            round: String(x[1] || "1").replace(/รอบที่\s*/g, "").trim(),
             name: x[2] || "-",
             room: x[3] || "-",
             num: x[4] || "-",
@@ -417,23 +415,20 @@
           };
         }
 
-        let roundRaw = x.round || x["รอบ"] || x.attempts || "1";
-        let roundVal = String(roundRaw).replace(/รอบที่\s*/g, "").trim();
-
         return {
-          round: roundVal,
-          name: x.name || x["ชื่อ"] || x["ผู้เรียน"] || "-",
+          round: String(x.round || x["รอบ"] || "1").replace(/รอบที่\s*/g, "").trim(),
+          name: x.name || x["ชื่อ"] || "-",
           room: x.room || x["ห้อง"] || "-",
           num: x.num || x["เลขที่"] || "-",
-          pc: x.pc ?? x["P(c)"] ?? 0,
+          pc: x.pc ?? 0,
           factor: (x.factor || x["ตัวประกอบ"]) ? "✓" : "-",
-          degree: x.degree ?? x["ดีกรี Q"] ?? "-",
-          q: x.q || x["Q(x)"] || "-",
-          hints: x.hints || x["คำใบ้"] || 0,
-          score: x.score || x["คะแนน"] || 0,
-          time: x.time || x["เวลา"] || 0
+          degree: x.degree ?? "-",
+          q: x.q || "-",
+          hints: x.hints || 0,
+          score: x.score || 0,
+          time: x.time || 0
         };
-      }).filter(x => x && x.name !== "-");
+      }).filter(Boolean);
 
       let u = new Set(parsedRows.map(x => x.name + "|" + x.room + "|" + x.num));
       let avg = parsedRows.length ? (parsedRows.reduce((s, x) => s + Number(x.score || 0), 0) / parsedRows.length).toFixed(1) : 0;
@@ -487,6 +482,7 @@
       URL.revokeObjectURL(u);
     }
 
+    // บังคับเปลี่ยนเป็น URL ล่าสุดเสมอ
     localStorage.setItem("rtl_v4_ep", DEFAULT_WEB_APP_URL);
     $("ep").value = DEFAULT_WEB_APP_URL;
   </script>
