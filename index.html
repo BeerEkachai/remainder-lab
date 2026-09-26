@@ -371,10 +371,9 @@
       $("sm").innerHTML='<div class="status hint">⏳ กำลังดึงข้อมูลนักเรียนทุกคนจาก Google Sheets...</div>';
       try{
         let res = await fetch(e, { method: "GET", redirect: "follow" });
-        let data = await res.json();
+        let rows = await res.json();
         
-        let rows = Array.isArray(data) ? data : (data.data || data.rows || []);
-        
+        // รับ Array โดยตรงจาก doGet(e)
         if(Array.isArray(rows) && rows.length > 0){
           cloudResults = rows;
           $("sm").innerHTML='<div class="status ok">✅ ดึงข้อมูลสำเร็จ! พบ ' + rows.length + ' รายการจากศูนย์กลาง</div>';
@@ -388,7 +387,6 @@
       dash();
     }
 
-    // 📊 Dashboard ปรับให้รองรับ Array โดยตรง
     function dash(){
       let localData = rec();
       let a = cloudResults.length > 0 ? cloudResults : localData;
@@ -397,9 +395,6 @@
 
       let parsedRows = a.map(x => {
         if (Array.isArray(x)) {
-          // ถ้าแถวแรกสุดติดคำว่า Timestamp หรือ round มาให้ข้าม
-          if (String(x[0]).includes("Timestamp") || String(x[1]).includes("round")) return null;
-
           return {
             round: String(x[1] || "1").replace(/รอบที่\s*/g, "").trim(),
             name: x[2] || "-",
@@ -428,7 +423,7 @@
           score: x.score || 0,
           time: x.time || 0
         };
-      }).filter(Boolean);
+      });
 
       let u = new Set(parsedRows.map(x => x.name + "|" + x.room + "|" + x.num));
       let avg = parsedRows.length ? (parsedRows.reduce((s, x) => s + Number(x.score || 0), 0) / parsedRows.length).toFixed(1) : 0;
@@ -482,7 +477,6 @@
       URL.revokeObjectURL(u);
     }
 
-    // บังคับเปลี่ยนเป็น URL ล่าสุดเสมอ
     localStorage.setItem("rtl_v4_ep", DEFAULT_WEB_APP_URL);
     $("ep").value = DEFAULT_WEB_APP_URL;
   </script>
