@@ -384,7 +384,7 @@
       dash();
     }
 
-    // 📊 Dashboard ตรงคีย์ภาษาไทย 100% กรองวันที่ออกสนิท
+    // 📊 Dashboard ตรงตามโครงสร้าง Google Sheets จริง 100% (ข้าม x[0] ที่เป็นวันที่)
     function dash(){
       let localData = rec();
       let a = cloudResults.length > 0 ? cloudResults : localData;
@@ -392,40 +392,42 @@
       if(!d) return;
 
       let parsedRows = a.map(x => {
-        // ดึงจาก Key ภาษาไทย/อังกฤษ โดยตรง ไม่ผ่าน Array Index
-        let nameVal = x["ชื่อ"] || x["ผู้เรียน"] || x.name || "-";
-        
-        // ดึงห้อง: ถ้าหลุดเป็นวันที่มา ให้เป็น "-"
-        let roomVal = x["ห้อง"] || x.room || "-";
-        if (String(roomVal).includes("T") || String(roomVal).includes("202")) {
-          roomVal = "-";
+        // หากส่งมาเป็น Array จาก Google Sheets
+        if (Array.isArray(x)) {
+          let roundRaw = x[1] || "1";
+          let roundVal = String(roundRaw).replace(/รอบที่\s*/g, "").trim();
+
+          return {
+            round: roundVal,
+            name: x[2] || "-",
+            room: x[3] || "-",
+            num: x[4] || "-",
+            pc: x[5] ?? 0,
+            factor: (x[6] === "true" || x[6] === true || x[6] === "✓") ? "✓" : "-",
+            degree: x[7] ?? "-",
+            q: x[8] || "-",
+            hints: x[9] || 0,
+            score: x[10] || 0,
+            time: x[11] || 0
+          };
         }
 
-        let numVal = x["เลขที่"] || x.num || "-";
-
-        let roundRaw = x["รอบ"] || x.round || x.attempts || "1";
+        // หากส่งมาเป็น Object (ดึงตรงตาม Key)
+        let roundRaw = x.round || x["รอบ"] || x.attempts || "1";
         let roundVal = String(roundRaw).replace(/รอบที่\s*/g, "").trim();
-
-        let pcVal = x["P(c)"] ?? x.pc ?? 0;
-        let factorVal = (x["ตัวประกอบ"] || x.factor) ? "✓" : "-";
-        let degreeVal = x["ดีกรี Q"] ?? x.degree ?? "-";
-        let qVal = x["Q(x)"] || x.q || "-";
-        let hintsVal = x["คำใบ้"] || x.hints || 0;
-        let scoreVal = x["คะแนน"] || x.score || 0;
-        let timeVal = x["เวลา"] || x.time || 0;
 
         return {
           round: roundVal,
-          name: nameVal,
-          room: roomVal,
-          num: numVal,
-          pc: pcVal,
-          factor: factorVal,
-          degree: degreeVal,
-          q: qVal,
-          hints: hintsVal,
-          score: scoreVal,
-          time: timeVal
+          name: x.name || x["ชื่อ"] || x["ผู้เรียน"] || "-",
+          room: x.room || x["ห้อง"] || "-",
+          num: x.num || x["เลขที่"] || "-",
+          pc: x.pc ?? x["P(c)"] ?? 0,
+          factor: (x.factor || x["ตัวประกอบ"]) ? "✓" : "-",
+          degree: x.degree ?? x["ดีกรี Q"] ?? "-",
+          q: x.q || x["Q(x)"] || "-",
+          hints: x.hints || x["คำใบ้"] || 0,
+          score: x.score || x["คะแนน"] || 0,
+          time: x.time || x["เวลา"] || 0
         };
       });
 
