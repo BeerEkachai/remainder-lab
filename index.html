@@ -392,87 +392,60 @@
       let d = $("dash");
       if(!d) return;
 
-      let idxRound = -1, idxName = -1, idxRoom = -1, idxNum = -1, idxPc = -1, idxFactor = -1, idxDegree = -1, idxQ = -1, idxHints = -1, idxScore = -1, idxTime = -1;
+      let parsedRows = [];
 
-      let dataRows = [];
+      a.forEach((x, idx) => {
+        if (!x) return;
 
-      a.forEach((x) => {
+        // ถ้ารับข้อมูลเป็น Array จาก Google Sheets (ตรงตามโครงสร้าง A-O ในภาพ)
         if (Array.isArray(x)) {
           let strRow = x.map(c => String(c).toLowerCase().trim());
           
-          let isHeader = strRow.some(c => c.includes("ผู้เรียน") || c.includes("ชื่อ") || c.includes("รอบ"));
-          if (isHeader) {
-            strRow.forEach((col, i) => {
-              if (col.includes("รอบ")) idxRound = i;
-              else if (col.includes("ชื่อ") || col.includes("ผู้เรียน")) idxName = i;
-              else if (col.includes("ห้อง")) idxRoom = i;
-              else if (col.includes("เลขที่")) idxNum = i;
-              else if (col.includes("p(c)")) idxPc = i;
-              else if (col.includes("ตัวประกอบ")) idxFactor = i;
-              else if (col.includes("ดีกรี")) idxDegree = i;
-              else if (col.includes("q(x)")) idxQ = i;
-              else if (col.includes("คำใบ้")) idxHints = i;
-              else if (col.includes("คะแนน")) idxScore = i;
-              else if (col.includes("เวลา")) idxTime = i;
-            });
+          // ข้ามแถวหัวตาราง
+          if (strRow.some(c => c.includes("รอบที่") || c.includes("วันที่") || c.includes("ชื่อ"))) {
             return;
           }
-          dataRows.push(x);
-        } else {
-          dataRows.push(x);
-        }
-      });
 
-      // กำหนด Index ตั้งต้น (รอบที่=0, ชื่อ=2, ห้อง=3, เลขที่=4)
-      if (idxRound === -1) idxRound = 0;
-      if (idxName === -1) idxName = 2;
-      if (idxRoom === -1) idxRoom = 3;
-      if (idxNum === -1) idxNum = 4;
-      if (idxPc === -1) idxPc = 7;
-      if (idxFactor === -1) idxFactor = 8;
-      if (idxDegree === -1) idxDegree = 9;
-      if (idxQ === -1) idxQ = 10;
-      if (idxHints === -1) idxHints = 11;
-      if (idxScore === -1) idxScore = 12;
-      if (idxTime === -1) idxTime = 13;
-
-      let parsedRows = dataRows.map((x, idx) => {
-        if (Array.isArray(x)) {
-          let scoreVal = parseFloat(x[idxScore]);
+          let scoreVal = parseFloat(x[12]); // คอลัมน์ M: คะแนนรวม
           if(isNaN(scoreVal)) scoreVal = 0;
 
-          return {
-            round: x[idxRound] || (idx + 1),
-            name: x[idxName] || "-",
-            room: x[idxRoom] || "-",
-            num: x[idxNum] || "-",
-            pc: x[idxPc] ?? "-",
-            factor: (x[idxFactor] === "true" || x[idxFactor] === true || x[idxFactor] === "✓") ? "✓" : "-",
-            degree: x[idxDegree] ?? "-",
-            q: x[idxQ] || "-",
-            hints: x[idxHints] || 0,
+          let factorVal = String(x[8] || ""); // คอลัมน์ I: เข้าใจตัวประกอบ
+          let isFactorOK = (factorVal === "✓" || factorVal.includes("เข้าใจ") || factorVal === "true" || factorVal === true);
+
+          parsedRows.push({
+            round: x[0] || (idx + 1),       // คอลัมน์ A: รอบที่
+            name: x[2] || "-",              // คอลัมน์ C: ชื่อ-รหัส
+            room: x[3] || "-",              // คอลัมน์ D: ห้อง
+            num: x[4] || "-",               // คอลัมน์ E: เลขที่
+            pc: x[7] ?? "-",                // คอลัมน์ H: P(c)
+            factor: isFactorOK ? "✓" : "-",
+            degree: x[9] ?? "-",            // คอลัมน์ J: ดีกรี Q(x)
+            q: x[10] || "-",                // คอลัมน์ K: คำตอบ Q(x)
+            hints: x[11] || 0,              // คอลัมน์ L: จำนวนคำใบ้
+            score: scoreVal,                // คอลัมน์ M: คะแนนรวม
+            time: x[13] || 0                // คอลัมน์ N: เวลาที่ใช้ (วินาที)
+          });
+        } 
+        // ถ้ารับข้อมูลเป็น Object จาก LocalStorage
+        else if (typeof x === "object") {
+          let scoreVal = parseFloat(x.score);
+          if(isNaN(scoreVal)) scoreVal = 0;
+
+          parsedRows.push({
+            round: x.round || (idx + 1),
+            name: x.name || "-",
+            room: x.room || "-",
+            num: x.num || "-",
+            pc: x.pc ?? "-",
+            factor: (x.factor) ? "✓" : "-",
+            degree: x.degree ?? "-",
+            q: x.q || "-",
+            hints: x.hints || 0,
             score: scoreVal,
-            time: x[idxTime] || 0
-          };
+            time: x.time || 0
+          });
         }
-
-        let scoreVal = parseFloat(x.score);
-        if(isNaN(scoreVal)) scoreVal = 0;
-
-        return {
-          round: x.round || (idx + 1),
-          name: x.name || "-",
-          room: x.room || "-",
-          num: x.num || "-",
-          pc: x.pc ?? "-",
-          factor: (x.factor) ? "✓" : "-",
-          degree: x.degree ?? "-",
-          q: x.q || "-",
-          hints: x.hints || 0,
-          score: scoreVal,
-          time: x.time || 0
-        };
-      }).filter(Boolean);
+      });
 
       let u = new Set(parsedRows.map(x => x.name + "|" + x.room + "|" + x.num));
       let totalScore = parsedRows.reduce((s, x) => s + Number(x.score || 0), 0);
@@ -487,24 +460,26 @@
         '<div class="table"><table><thead><tr>' +
         '<th>รอบที่</th><th>ผู้เรียน</th><th>ห้อง</th><th>เลขที่</th><th>P(c)</th><th>ตัวประกอบ</th><th>ดีกรี Q</th><th>Q(x)</th><th>คำใบ้</th><th>คะแนน</th><th>เวลา</th>' +
         '</tr></thead><tbody>' +
-        parsedRows.slice().reverse().map(x => {
-          return '<tr>' +
-            '<td><b>' + esc(x.round) + '</b></td>' +
-            '<td>' + esc(x.name) + '</td>' +
-            '<td>' + esc(x.room) + '</td>' +
-            '<td>' + esc(x.num) + '</td>' +
-            '<td>' + fmt(x.pc) + '</td>' +
-            '<td>' + x.factor + '</td>' +
-            '<td>' + esc(x.degree) + '</td>' +
-            '<td>' + esc(x.q) + '</td>' +
-            '<td>' + x.hints + '</td>' +
-            '<td><span class="badge">' + x.score + '</span></td>' +
-            '<td>' + x.time + 's</td>' +
-            '</tr>';
-        }).join("") +
+        (parsedRows.length === 0 ? 
+          '<tr><td colspan="11" style="text-align:center;padding:20px;">ไม่พบข้อมูลรายการที่ตรงกัน</td></tr>' :
+          parsedRows.slice().reverse().map(x => {
+            return '<tr>' +
+              '<td><b>' + esc(x.round) + '</b></td>' +
+              '<td>' + esc(x.name) + '</td>' +
+              '<td>' + esc(x.room) + '</td>' +
+              '<td>' + esc(x.num) + '</td>' +
+              '<td>' + fmt(x.pc) + '</td>' +
+              '<td>' + x.factor + '</td>' +
+              '<td>' + esc(x.degree) + '</td>' +
+              '<td>' + esc(x.q) + '</td>' +
+              '<td>' + x.hints + '</td>' +
+              '<td><span class="badge">' + x.score + '</span></td>' +
+              '<td>' + x.time + 's</td>' +
+              '</tr>';
+          }).join("")
+        ) +
         '</tbody></table></div>';
     }
-
     function esc(s){
       return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
     }
