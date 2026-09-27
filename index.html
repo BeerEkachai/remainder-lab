@@ -111,20 +111,16 @@
     📚 สื่อการเรียนรู้คณิตศาสตร์ &nbsp; • &nbsp; 🔎 Inquiry-Based Learning<br>
     พัฒนาและออกแบบระบบการเรียนรู้โดย &nbsp; <b>นายเอกชัย สะอาดแก้ว</b>
   </footer>
-
   <script>
     const TEACHER_PASSWORD = "9999";
     const DEFAULT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyZL_is8wviLqa_8zhFRnq2-jNvtiEdxpWOPoeUETY8mgn-AkTwbUbvnI-kh6COTFL8YA/exec";
-
     let S={}, hl=0, probs=[["x^3-6x^2+11x-6","1"],["x^4-5x^2+4","1"],["x^3-4x^2+x+6","2"],["x^3+2x^2-x-2","1"],["x^4-13x^2+36","2"]];
     let cloudResults = [];
     let isTeacherAuthed = false;
     let autoRefreshInterval = null;
-
     let scoreStep1 = 0, scoreStep2 = 2, scoreStep3 = 2, scoreStep4 = 4;
-
     const $=id=>document.getElementById(id);
-
+    
     function mode(x){
       if(x == 'teacher' && !isTeacherAuthed){
         let pwd = prompt("🔒 กรุณากรอกรหัสผ่านสำหรับ Dashboard ครู:");
@@ -153,7 +149,7 @@
         }
       }
     }
-
+    
     function frac(x){
       x=String(x).trim();
       if(x.includes("/")){
@@ -162,7 +158,7 @@
       }
       return Number(x);
     }
-
+    
     function parse(s){
       s=String(s).replace(/\s+/g,"").replace(/−/g,"-").replace(/\*/g,"").replace(/X/g,"x");
       if(!s||!/^[0-9x^+./-]+$/.test(s))return null;
@@ -188,28 +184,28 @@
       for(let i=d;i>=0;i--)a.push(m[i]||0);
       return a;
     }
-
+    
     function ev(a,x){
       let y=0;
       for(let v of a)y=y*x+v;
       return y;
     }
-
+    
     function syn(a,c){
       let q=[a[0]];
       for(let i=1;i<a.length-1;i++)q.push(a[i]+q.at(-1)*c);
       return q;
     }
-
+    
     function eq(a,b){
       return a&&b&&a.length==b.length&&a.every((v,i)=>Math.abs(v-b[i])<1e-7);
     }
-
+    
     function fmt(n){
       if(n === undefined || n === null || n === "" || isNaN(n)) return "-";
       return Math.abs(n-Math.round(n))<1e-9?String(Math.round(n)):String(Math.round(n*1e6)/1e6);
     }
-
+    
     function start(){
       let n=$("name").value.trim();
       if(!n){
@@ -221,7 +217,7 @@
       $("lab").classList.remove("hidden");
       reset();
     }
-
+    
     function reset(){
       ["s2","s3","s4","s5"].forEach(x=>$(x).classList.add("hidden"));
       $("fb").innerHTML="";
@@ -231,24 +227,23 @@
       $("q").value="";
       $("ref").value="";
       hl=0;
-
       scoreStep1 = 0;
       scoreStep2 = 2;
       scoreStep3 = 2;
       scoreStep4 = 4;
     }
-
+    
     function newProblem(){
       let p = probs[Math.floor(Math.random()*probs.length)];
       $("poly").value = p[0];
       $("c").value = p[1];
       reset();
     }
-
+    
     function updateTotalScore(){
       S.score = scoreStep1 + scoreStep2 + scoreStep3 + scoreStep4;
     }
-
+    
     function pc(){
       let a=parse($("poly").value),c=frac($("c").value);
       if(!a||!Number.isFinite(c)){
@@ -266,7 +261,7 @@
       scoreStep1 = Math.abs(S.pc)<1e-9 ? 2 : 0;
       updateTotalScore();
     }
-
+    
     function factorCheck(){
       if($("factor").value=="yes"){
         S.factor=true;
@@ -278,7 +273,7 @@
       }
       updateTotalScore();
     }
-
+    
     function degreeCheck(){
       let a=parse(S.poly),v=Number($("dq").value);
       S.degree=v;
@@ -291,7 +286,7 @@
       }
       updateTotalScore();
     }
-
+    
     function qCheck(){
       let a=parse(S.poly),c=frac(S.c),g=parse($("q").value);
       if(!g){
@@ -308,14 +303,14 @@
       }
       updateTotalScore();
     }
-
+    
     function hint(){
       hl++;
       S.hints++;
       let m=hl==1?"ถ้า P(c)=0 ให้พิจารณาว่า (x−c) เป็นตัวประกอบหรือไม่":hl==2?"ดีกรี Q(x) ต่ำกว่าดีกรี P(x) อยู่ 1":"ใช้ c ในการหารสังเคราะห์ แล้วอ่านสัมประสิทธิ์ของ Q(x)";
       $("hb").innerHTML='<div class="status hint">💡 '+m+"</div>";
     }
-
+    
     function finish(){
       S.ref=$("ref").value.trim();
       S.time=Math.round((Date.now()-S.start)/1000);
@@ -323,22 +318,21 @@
       let a=rec();
       let myPreviousRuns = a.filter(x => x.name === S.name && x.room === S.room && x.num === S.num);
       S.round = myPreviousRuns.length + 1;
-
       a.push({...S});
       localStorage.setItem("rtl_v4_results",JSON.stringify(a));
       trySync(S);
       $("fb").innerHTML='<div class="status ok">🏁 บันทึกแล้ว — คะแนน '+S.score+" | เวลา "+S.time+" วินาที</div>";
     }
-
+    
     function rec(){
       return JSON.parse(localStorage.getItem("rtl_v4_results")||"[]");
     }
-
+    
     function saveEP(){
       localStorage.setItem("rtl_v4_ep",$("ep").value.trim());
       $("sm").innerHTML='<div class="status ok">บันทึก URL แล้ว</div>';
     }
-
+    
     function clearData(){
       if(confirm("คุณครูต้องการล้างข้อมูลในเครื่องนี้ใช่หรือไม่?")){
         localStorage.removeItem("rtl_v4_results");
@@ -347,7 +341,7 @@
         $("sm").innerHTML='<div class="status ok">🗑️ ล้างข้อมูลเรียบร้อยแล้ว</div>';
       }
     }
-
+    
     async function trySync(x){
       let e = localStorage.getItem("rtl_v4_ep") || DEFAULT_WEB_APP_URL;
       try{
@@ -361,7 +355,7 @@
         console.error("Sync error:", err);
       }
     }
-
+    
     async function fetchCloudData(){
       let e=$("ep").value.trim()||localStorage.getItem("rtl_v4_ep")||DEFAULT_WEB_APP_URL;
       if(!e){
@@ -386,51 +380,40 @@
       dash();
     }
 
-  function dash(){
+    function dash(){
       let localData = rec();
       let a = cloudResults.length > 0 ? cloudResults : localData;
       let d = $("dash");
       if(!d) return;
-
       let parsedRows = [];
-
       a.forEach((x, idx) => {
         if (!x) return;
-
-        // ถ้ารับข้อมูลเป็น Array จาก Google Sheets (doGet)
         if (Array.isArray(x)) {
           let strRow = x.map(c => String(c).toLowerCase().trim());
-          
-          // ข้ามแถวที่เป็นหัวตาราง
           if (strRow.some(c => c.includes("รอบที่") || c.includes("วันที่") || c.includes("พหุนาม"))) {
             return;
           }
-
-          let scoreVal = parseFloat(x[12]); // Col M (Index 12): คะแนนรวม
+          let scoreVal = parseFloat(x[12]);
           if(isNaN(scoreVal)) scoreVal = 0;
-
-          let factorVal = String(x[8] || ""); // Col I (Index 8): เข้าใจตัวประกอบ
+          let factorVal = String(x[8] || "");
           let isFactorOK = (factorVal === "✓" || factorVal.includes("เข้าใจ") || factorVal === "true" || factorVal === true);
-
           parsedRows.push({
-            round: x[0] || (idx + 1),       // Col A (Index 0): รอบที่
-            name: x[2] || "-",              // Col C (Index 2): ชื่อ-รหัส
-            room: x[3] || "-",              // Col D (Index 3): ห้อง
-            num: x[4] || "-",               // Col E (Index 4): เลขที่
-            pc: x[7] ?? "-",                // Col H (Index 7): P(c)
+            round: x[0] || (idx + 1),
+            name: x[2] || "-",
+            room: x[3] || "-",
+            num: x[4] || "-",
+            pc: x[7] ?? "-",
             factor: isFactorOK ? "✓" : "-",
-            degree: x[9] ?? "-",            // Col J (Index 9): ดีกรี Q(x)
-            q: x[10] || "-",                // Col K (Index 10): คำตอบ Q(x)
-            hints: x[11] || 0,              // Col L (Index 11): จำนวนคำใบ้
-            score: scoreVal,                // Col M (Index 12): คะแนนรวม
-            time: x[13] || 0                // Col N (Index 13): เวลาที่ใช้
+            degree: x[9] ?? "-",
+            q: x[10] || "-",
+            hints: x[11] || 0,
+            score: scoreVal,
+            time: x[13] || 0
           });
         } 
-        // ถ้ารับข้อมูลเป็น Object จาก LocalStorage ในเครื่อง
         else if (typeof x === "object") {
           let scoreVal = parseFloat(x.score);
           if(isNaN(scoreVal)) scoreVal = 0;
-
           parsedRows.push({
             round: x.round || (idx + 1),
             name: x.name || "-",
@@ -446,11 +429,9 @@
           });
         }
       });
-
       let u = new Set(parsedRows.map(x => x.name + "|" + x.room + "|" + x.num));
       let totalScore = parsedRows.reduce((s, x) => s + Number(x.score || 0), 0);
       let avg = parsedRows.length ? (totalScore / parsedRows.length).toFixed(1) : 0;
-
       d.innerHTML = '<div class="stats">' +
         '<div class="stat">👥 ผู้เรียน<strong>' + u.size + '</strong></div>' +
         '<div class="stat">🧪 ภารกิจ<strong>' + parsedRows.length + '</strong></div>' +
@@ -480,6 +461,7 @@
         ) +
         '</tbody></table></div>';
     }
+
     function esc(s){
       return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
     }
