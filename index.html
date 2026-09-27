@@ -392,43 +392,57 @@
 
         // ถ้ารับข้อมูลเป็น Array จาก Google Sheets
         if (Array.isArray(x)) {
-          // ตรวจสอบว่าไม่ใช่แถวว่างเปล่า
           let hasData = x.some(cell => String(cell).trim() !== "");
           if (!hasData) return;
 
-          // เช็คว่าเป็นแถว Header หลักหรือไม่ (เช็คจาก Col A หรือ B แบบระบุตำแหน่งเพื่อไม่ให้กระทบข้อมูลจริง)
           let col0 = String(x[0] || "").trim();
           let col1 = String(x[1] || "").trim();
           let col2 = String(x[2] || "").trim();
           
           if (col0 === "รอบที่" || col1 === "วันที่-เวลา" || col1 === "Timestamp" || col2 === "ชื่อ-รหัส") {
-            return; // ข้ามเฉพาะแถวที่เป็นหัวตารางจริงๆ
+            return; // ข้ามแถวหัวตาราง
           }
 
+          // ตรวจสอบ Index คอลัมน์จริงจาก Sheet เดิม:
+          // Col K (x[10]) = Q(x)
+          // Col L (x[11]) = คำใบ้ (Hints)
+          // Col M (x[12]) = คะแนน (Score)
+          // Col N (x[13]) = เวลา (Time)
+          
+          let qVal = x[10] || "-";
+          let hintVal = parseInt(x[11]);
+          if (isNaN(hintVal)) hintVal = 0; // ป้องกัน NaN ถ้าเป็นข้อความ
+
           let scoreVal = parseFloat(x[12]); 
-          if(isNaN(scoreVal)) scoreVal = parseFloat(x[11]) || 0; // ยืดหยุ่นรองรับโครงสร้างคอลัมน์เดิม
+          if(isNaN(scoreVal)) scoreVal = 0;
+
+          let timeVal = parseInt(x[13]);
+          if(isNaN(timeVal)) timeVal = 0;
 
           let factorVal = String(x[8] || ""); 
           let isFactorOK = (factorVal === "✓" || factorVal.includes("เข้าใจ") || factorVal.toLowerCase() === "true" || factorVal === "yes");
 
           parsedRows.push({
             round: x[0] || (idx + 1),       
-            name: x[2] || x[1] || "-",      
+            name: x[2] || "-",      
             room: x[3] || "-",              
             num: x[4] || "-",               
-            pc: x[7] ?? x[6] ?? "-",        
+            pc: x[7] ?? "-",        
             factor: isFactorOK ? "✓" : (factorVal ? factorVal : "-"),
             degree: x[9] ?? "-",            
-            q: x[10] || "-",                
-            hints: x[11] || x[10] || 0,     
+            q: qVal,                
+            hints: hintVal,     
             score: scoreVal,                
-            time: x[13] || x[12] || 0       
+            time: timeVal       
           });
         } 
-        // ถ้ารับข้อมูลเป็น Object
+        // ถ้ารับข้อมูลเป็น Object (LocalStorage)
         else if (typeof x === "object") {
           let scoreVal = parseFloat(x.score);
           if(isNaN(scoreVal)) scoreVal = 0;
+          let hintVal = parseInt(x.hints);
+          if(isNaN(hintVal)) hintVal = 0;
+
           parsedRows.push({
             round: x.round || (idx + 1),
             name: x.name || "-",
@@ -438,7 +452,7 @@
             factor: (x.factor) ? "✓" : "-",
             degree: x.degree ?? "-",
             q: x.q || "-",
-            hints: x.hints || 0,
+            hints: hintVal,
             score: scoreVal,
             time: x.time || 0
           });
@@ -447,13 +461,14 @@
 
       let u = new Set(parsedRows.map(x => x.name + "|" + x.room + "|" + x.num));
       let totalScore = parsedRows.reduce((s, x) => s + Number(x.score || 0), 0);
+      let totalHints = parsedRows.reduce((s, x) => s + Number(x.hints || 0), 0);
       let avg = parsedRows.length ? (totalScore / parsedRows.length).toFixed(1) : 0;
 
       d.innerHTML = '<div class="stats">' +
         '<div class="stat">👥 ผู้เรียน<strong>' + u.size + '</strong></div>' +
         '<div class="stat">🧪 ภารกิจ<strong>' + parsedRows.length + '</strong></div>' +
         '<div class="stat">⭐ คะแนนเฉลี่ย<strong>' + avg + '</strong></div>' +
-        '<div class="stat">💡 คำใบ้<strong>' + parsedRows.reduce((s, x) => s + Number(x.hints || 0), 0) + '</strong></div>' +
+        '<div class="stat">💡 คำใบ้<strong>' + totalHints + '</strong></div>' +
         '</div>' +
         '<div class="table"><table><thead><tr>' +
         '<th>รอบที่</th><th>ผู้เรียน</th><th>ห้อง</th><th>เลขที่</th><th>P(c)</th><th>ตัวประกอบ</th><th>ดีกรี Q</th><th>Q(x)</th><th>คำใบ้</th><th>คะแนน</th><th>เวลา</th>' +
