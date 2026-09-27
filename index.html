@@ -319,7 +319,6 @@
     function finish(){
       S.ref=$("ref").value.trim();
       S.time=Math.round((Date.now()-S.start)/1000);
-      S.date=new Date().toLocaleString("th-TH");
       
       let a=rec();
       let myPreviousRuns = a.filter(x => x.name === S.name && x.room === S.room && x.num === S.num);
@@ -387,15 +386,13 @@
       dash();
     }
 
-    // 🎯 ระบบ Dynamic Column Matching: ค้นหาหัวตารางและแมปคอลัมน์อัตโนมัติ 100%
     function dash(){
       let localData = rec();
       let a = cloudResults.length > 0 ? cloudResults : localData;
       let d = $("dash");
       if(!d) return;
 
-      // ค้นหาตำแหน่ง Index จากแถวหัวตาราง (ถ้ามี)
-      let idxName = -1, idxRoom = -1, idxNum = -1, idxPc = -1, idxFactor = -1, idxDegree = -1, idxQ = -1, idxHints = -1, idxScore = -1, idxTime = -1;
+      let idxRound = -1, idxName = -1, idxRoom = -1, idxNum = -1, idxPc = -1, idxFactor = -1, idxDegree = -1, idxQ = -1, idxHints = -1, idxScore = -1, idxTime = -1;
 
       let dataRows = [];
 
@@ -403,10 +400,11 @@
         if (Array.isArray(x)) {
           let strRow = x.map(c => String(c).toLowerCase().trim());
           
-          // ตรวจสอบว่าเป็นแถวหัวตารางหรือไม่
-          if (strRow.some(c => c.includes("ผู้เรียน") || c.includes("ชื่อ") || c.includes(" timestamp"))) {
+          let isHeader = strRow.some(c => c.includes("ผู้เรียน") || c.includes("ชื่อ") || c.includes("รอบ"));
+          if (isHeader) {
             strRow.forEach((col, i) => {
-              if (col.includes("ชื่อ") || col.includes("ผู้เรียน")) idxName = i;
+              if (col.includes("รอบ")) idxRound = i;
+              else if (col.includes("ชื่อ") || col.includes("ผู้เรียน")) idxName = i;
               else if (col.includes("ห้อง")) idxRoom = i;
               else if (col.includes("เลขที่")) idxNum = i;
               else if (col.includes("p(c)")) idxPc = i;
@@ -417,7 +415,7 @@
               else if (col.includes("คะแนน")) idxScore = i;
               else if (col.includes("เวลา")) idxTime = i;
             });
-            return; // ข้ามแถวหัวตาราง
+            return;
           }
           dataRows.push(x);
         } else {
@@ -425,17 +423,18 @@
         }
       });
 
-      // กำหนดค่า Default fallback หากหาไม่เจอ
+      // กำหนด Index ตั้งต้น (รอบที่=0, ชื่อ=2, ห้อง=3, เลขที่=4)
+      if (idxRound === -1) idxRound = 0;
       if (idxName === -1) idxName = 2;
       if (idxRoom === -1) idxRoom = 3;
       if (idxNum === -1) idxNum = 4;
-      if (idxPc === -1) idxPc = 5;
-      if (idxFactor === -1) idxFactor = 6;
-      if (idxDegree === -1) idxDegree = 7;
-      if (idxQ === -1) idxQ = 8;
-      if (idxHints === -1) idxHints = 9;
-      if (idxScore === -1) idxScore = 10;
-      if (idxTime === -1) idxTime = 11;
+      if (idxPc === -1) idxPc = 7;
+      if (idxFactor === -1) idxFactor = 8;
+      if (idxDegree === -1) idxDegree = 9;
+      if (idxQ === -1) idxQ = 10;
+      if (idxHints === -1) idxHints = 11;
+      if (idxScore === -1) idxScore = 12;
+      if (idxTime === -1) idxTime = 13;
 
       let parsedRows = dataRows.map((x, idx) => {
         if (Array.isArray(x)) {
@@ -443,7 +442,7 @@
           if(isNaN(scoreVal)) scoreVal = 0;
 
           return {
-            round: idx + 1,
+            round: x[idxRound] || (idx + 1),
             name: x[idxName] || "-",
             room: x[idxRoom] || "-",
             num: x[idxNum] || "-",
@@ -486,11 +485,11 @@
         '<div class="stat">💡 คำใบ้<strong>' + parsedRows.reduce((s, x) => s + Number(x.hints || 0), 0) + '</strong></div>' +
         '</div>' +
         '<div class="table"><table><thead><tr>' +
-        '<th>รอบ</th><th>ผู้เรียน</th><th>ห้อง</th><th>เลขที่</th><th>P(c)</th><th>ตัวประกอบ</th><th>ดีกรี Q</th><th>Q(x)</th><th>คำใบ้</th><th>คะแนน</th><th>เวลา</th>' +
+        '<th>รอบที่</th><th>ผู้เรียน</th><th>ห้อง</th><th>เลขที่</th><th>P(c)</th><th>ตัวประกอบ</th><th>ดีกรี Q</th><th>Q(x)</th><th>คำใบ้</th><th>คะแนน</th><th>เวลา</th>' +
         '</tr></thead><tbody>' +
         parsedRows.slice().reverse().map(x => {
           return '<tr>' +
-            '<td><b>รอบที่ ' + esc(x.round) + '</b></td>' +
+            '<td><b>' + esc(x.round) + '</b></td>' +
             '<td>' + esc(x.name) + '</td>' +
             '<td>' + esc(x.room) + '</td>' +
             '<td>' + esc(x.num) + '</td>' +
@@ -521,7 +520,7 @@
       }
       let a = cloudResults.length > 0 ? cloudResults : rec();
       if(!a.length){alert("ยังไม่มีข้อมูล");return}
-      let c=["round","date","name","room","num","poly","c","pc","factor","degree","q","hints","score","time","ref"],s="\ufeff"+c.join(",")+"\n"+a.map(x=>c.map(k=>'"'+String(x[k]??"").replaceAll('"','""')+'"').join(",")).join("\n"),u=URL.createObjectURL(new BlobAttribute([s],{type:"text/csv;charset=utf-8"})),z=document.createElement("a");
+      let c=["round","name","room","num","poly","c","pc","factor","degree","q","hints","score","time","ref"],s="\ufeff"+c.join(",")+"\n"+a.map(x=>c.map(k=>'"'+String(x[k]??"").replaceAll('"','""')+'"').join(",")).join("\n"),u=URL.createObjectURL(new Blob([s],{type:"text/csv;charset=utf-8"})),z=document.createElement("a");
       z.href=u;
       z.download="Remainder_Theorem_Inquiry_Lab_results.csv";
       z.click();
