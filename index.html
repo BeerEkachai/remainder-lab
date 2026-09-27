@@ -386,100 +386,85 @@
       dash();
     }
 
-    function dash(){
-      let localData = rec();
-      let a = cloudResults.length > 0 ? cloudResults : localData;
-      let d = $("dash");
-      if(!d) return;
-
-      let parsedRows = [];
-
-      a.forEach((x, idx) => {
-        if (!x) return;
-
-        // ถ้ารับข้อมูลเป็น Array จาก Google Sheets (ตรงตามโครงสร้าง A-O ในภาพ)
-        if (Array.isArray(x)) {
-          let strRow = x.map(c => String(c).toLowerCase().trim());
-          
-          // ข้ามแถวหัวตาราง
-          if (strRow.some(c => c.includes("รอบที่") || c.includes("วันที่") || c.includes("ชื่อ"))) {
-            return;
+    // 1. ฟังก์ชันดึงข้อมูลจาก "ทุกแท็บ" ไปแสดงบน Teacher Dashboard (doGet)
+function doGet(e) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheets = ss.getSheets();
+    var allRows = [];
+    for (var i = 0; i < sheets.length; i++) {
+      var sheet = sheets[i];
+      var data = sheet.getDataRange().getValues();
+      
+      if (data.length > 1) {
+        // ข้ามแถวหัวตาราง (Row 1) ดึงเฉพาะข้อมูลนักเรียน
+        for (var j = 1; j < data.length; j++) {
+          // เช็คว่ามีข้อมูลในแถวนั้นจริงๆ (ไม่เป็นแถวว่าง)
+          if (data[j][0] !== "" || data[j][1] !== "" || data[j][2] !== "") { 
+            allRows.push(data[j]);
           }
-
-          let scoreVal = parseFloat(x[12]); // คอลัมน์ M: คะแนนรวม
-          if(isNaN(scoreVal)) scoreVal = 0;
-
-          let factorVal = String(x[8] || ""); // คอลัมน์ I: เข้าใจตัวประกอบ
-          let isFactorOK = (factorVal === "✓" || factorVal.includes("เข้าใจ") || factorVal === "true" || factorVal === true);
-
-          parsedRows.push({
-            round: x[0] || (idx + 1),       // คอลัมน์ A: รอบที่
-            name: x[2] || "-",              // คอลัมน์ C: ชื่อ-รหัส
-            room: x[3] || "-",              // คอลัมน์ D: ห้อง
-            num: x[4] || "-",               // คอลัมน์ E: เลขที่
-            pc: x[7] ?? "-",                // คอลัมน์ H: P(c)
-            factor: isFactorOK ? "✓" : "-",
-            degree: x[9] ?? "-",            // คอลัมน์ J: ดีกรี Q(x)
-            q: x[10] || "-",                // คอลัมน์ K: คำตอบ Q(x)
-            hints: x[11] || 0,              // คอลัมน์ L: จำนวนคำใบ้
-            score: scoreVal,                // คอลัมน์ M: คะแนนรวม
-            time: x[13] || 0                // คอลัมน์ N: เวลาที่ใช้ (วินาที)
-          });
-        } 
-        // ถ้ารับข้อมูลเป็น Object จาก LocalStorage
-        else if (typeof x === "object") {
-          let scoreVal = parseFloat(x.score);
-          if(isNaN(scoreVal)) scoreVal = 0;
-
-          parsedRows.push({
-            round: x.round || (idx + 1),
-            name: x.name || "-",
-            room: x.room || "-",
-            num: x.num || "-",
-            pc: x.pc ?? "-",
-            factor: (x.factor) ? "✓" : "-",
-            degree: x.degree ?? "-",
-            q: x.q || "-",
-            hints: x.hints || 0,
-            score: scoreVal,
-            time: x.time || 0
-          });
         }
-      });
-
-      let u = new Set(parsedRows.map(x => x.name + "|" + x.room + "|" + x.num));
-      let totalScore = parsedRows.reduce((s, x) => s + Number(x.score || 0), 0);
-      let avg = parsedRows.length ? (totalScore / parsedRows.length).toFixed(1) : 0;
-
-      d.innerHTML = '<div class="stats">' +
-        '<div class="stat">👥 ผู้เรียน<strong>' + u.size + '</strong></div>' +
-        '<div class="stat">🧪 ภารกิจ<strong>' + parsedRows.length + '</strong></div>' +
-        '<div class="stat">⭐ คะแนนเฉลี่ย<strong>' + avg + '</strong></div>' +
-        '<div class="stat">💡 คำใบ้<strong>' + parsedRows.reduce((s, x) => s + Number(x.hints || 0), 0) + '</strong></div>' +
-        '</div>' +
-        '<div class="table"><table><thead><tr>' +
-        '<th>รอบที่</th><th>ผู้เรียน</th><th>ห้อง</th><th>เลขที่</th><th>P(c)</th><th>ตัวประกอบ</th><th>ดีกรี Q</th><th>Q(x)</th><th>คำใบ้</th><th>คะแนน</th><th>เวลา</th>' +
-        '</tr></thead><tbody>' +
-        (parsedRows.length === 0 ? 
-          '<tr><td colspan="11" style="text-align:center;padding:20px;">ไม่พบข้อมูลรายการที่ตรงกัน</td></tr>' :
-          parsedRows.slice().reverse().map(x => {
-            return '<tr>' +
-              '<td><b>' + esc(x.round) + '</b></td>' +
-              '<td>' + esc(x.name) + '</td>' +
-              '<td>' + esc(x.room) + '</td>' +
-              '<td>' + esc(x.num) + '</td>' +
-              '<td>' + fmt(x.pc) + '</td>' +
-              '<td>' + x.factor + '</td>' +
-              '<td>' + esc(x.degree) + '</td>' +
-              '<td>' + esc(x.q) + '</td>' +
-              '<td>' + x.hints + '</td>' +
-              '<td><span class="badge">' + x.score + '</span></td>' +
-              '<td>' + x.time + 's</td>' +
-              '</tr>';
-          }).join("")
-        ) +
-        '</tbody></table></div>';
+      }
     }
+    return ContentService.createTextOutput(JSON.stringify(allRows))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({ "status": "error", "message": error.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// 2. ฟังก์ชันบันทึกข้อมูลจากนักเรียนเข้า Sheets (doPost)
+function doPost(e) {
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(10000); 
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ "result": "error", "error": "Server busy" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var data = JSON.parse(e.postData.contents);
+    
+    var sheet = ss.getActiveSheet(); 
+    if (data.room) {
+      var targetSheet = ss.getSheetByName(data.room.trim());
+      if (targetSheet) {
+        sheet = targetSheet;
+      }
+    }
+
+    // สร้าง Timestamp เวลาปัจจุบัน
+    var timeStamp = Utilities.formatDate(new Date(), "Asia/Bangkok", "dd/MM/yyyy HH:mm");
+
+    // บันทึกลง Sheet ให้ตรงกับโครงสร้างใน Sheet ของคุณครู (คอลัมน์ A ถึง O)
+    sheet.appendRow([
+      data.round || 1,             // Col A (Index 0): รอบที่
+      timeStamp,                  // Col B (Index 1): วันที่-เวลา
+      data.name || "-",           // Col C (Index 2): ชื่อ-รหัส
+      data.room || "-",           // Col D (Index 3): ห้อง
+      data.num || "-",            // Col E (Index 4): เลขที่
+      data.poly || "-",           // Col F (Index 5): พหุนาม P(x)
+      data.c || "-",              // Col G (Index 6): ค่า c
+      data.pc ?? "-",             // Col H (Index 7): P(c)
+      data.factor ? "เข้าใจ" : "-", // Col I (Index 8): เข้าใจตัวประกอบ
+      data.degree ?? "-",         // Col J (Index 9): ดีกรี Q(x)
+      data.q || "-",              // Col K (Index 10): คำตอบ Q(x)
+      data.hints ?? 0,            // Col L (Index 11): จำนวนคำใบ้
+      data.score ?? 0,            // Col M (Index 12): คะแนนรวม
+      data.time ?? 0,             // Col N (Index 13): เวลาที่ใช้ (วินาที)
+      data.ref || "-"             // Col O (Index 14): Reflection
+    ]);
+    return ContentService.createTextOutput(JSON.stringify({ "result": "success" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({ "result": "error", "error": error.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } finally {
+    lock.releaseLock();
+  }
+}
     function esc(s){
       return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
     }
