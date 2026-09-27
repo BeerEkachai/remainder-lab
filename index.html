@@ -403,21 +403,24 @@
             return; // ข้ามแถวหัวตาราง
           }
 
-          // ตรวจสอบ Index คอลัมน์จริงจาก Sheet เดิม:
+          // Index คอลัมน์จาก Sheet:
           // Col K (x[10]) = Q(x)
           // Col L (x[11]) = คำใบ้ (Hints)
           // Col M (x[12]) = คะแนน (Score)
           // Col N (x[13]) = เวลา (Time)
+          // Col O (x[14]) = Reflection
           
           let qVal = x[10] || "-";
           let hintVal = parseInt(x[11]);
-          if (isNaN(hintVal)) hintVal = 0; // ป้องกัน NaN ถ้าเป็นข้อความ
+          if (isNaN(hintVal)) hintVal = 0;
 
           let scoreVal = parseFloat(x[12]); 
           if(isNaN(scoreVal)) scoreVal = 0;
 
           let timeVal = parseInt(x[13]);
           if(isNaN(timeVal)) timeVal = 0;
+
+          let refVal = x[14] || x[13] || "-"; // อ่านค่า Reflection (ยืดหยุ่นรองรับตำแหน่งคอลัมน์)
 
           let factorVal = String(x[8] || ""); 
           let isFactorOK = (factorVal === "✓" || factorVal.includes("เข้าใจ") || factorVal.toLowerCase() === "true" || factorVal === "yes");
@@ -433,7 +436,8 @@
             q: qVal,                
             hints: hintVal,     
             score: scoreVal,                
-            time: timeVal       
+            time: timeVal,
+            ref: refVal
           });
         } 
         // ถ้ารับข้อมูลเป็น Object (LocalStorage)
@@ -454,7 +458,8 @@
             q: x.q || "-",
             hints: hintVal,
             score: scoreVal,
-            time: x.time || 0
+            time: x.time || 0,
+            ref: x.ref || "-"
           });
         }
       });
@@ -471,10 +476,10 @@
         '<div class="stat">💡 คำใบ้<strong>' + totalHints + '</strong></div>' +
         '</div>' +
         '<div class="table"><table><thead><tr>' +
-        '<th>รอบที่</th><th>ผู้เรียน</th><th>ห้อง</th><th>เลขที่</th><th>P(c)</th><th>ตัวประกอบ</th><th>ดีกรี Q</th><th>Q(x)</th><th>คำใบ้</th><th>คะแนน</th><th>เวลา</th>' +
+        '<th>รอบที่</th><th>ผู้เรียน</th><th>ห้อง</th><th>เลขที่</th><th>P(c)</th><th>ตัวประกอบ</th><th>ดีกรี Q</th><th>Q(x)</th><th>คำใบ้</th><th>คะแนน</th><th>เวลา</th><th>Reflection</th>' +
         '</tr></thead><tbody>' +
         (parsedRows.length === 0 ? 
-          '<tr><td colspan="11" style="text-align:center;padding:20px;">ไม่พบข้อมูลรายการที่ตรงกัน</td></tr>' :
+          '<tr><td colspan="12" style="text-align:center;padding:20px;">ไม่พบข้อมูลรายการที่ตรงกัน</td></tr>' :
           parsedRows.slice().reverse().map(x => {
             return '<tr>' +
               '<td><b>' + esc(x.round) + '</b></td>' +
@@ -488,6 +493,7 @@
               '<td>' + x.hints + '</td>' +
               '<td><span class="badge">' + x.score + '</span></td>' +
               '<td>' + x.time + 's</td>' +
+              '<td style="max-width:200px; word-break:break-word;">' + esc(x.ref) + '</td>' +
               '</tr>';
           }).join("")
         ) +
