@@ -513,15 +513,89 @@
         }
         isTeacherAuthed = true;
       }
-      let a = cloudResults.length > 0 ? cloudResults : rec();
-      if(!a.length){alert("ยังไม่มีข้อมูล");return}
-      let c=["round","name","room","num","poly","c","pc","factor","degree","q","hints","score","time","ref"],s="\ufeff"+c.join(",")+"\n"+a.map(x=>c.map(k=>'"'+String(x[k]??"").replaceAll('"','""')+'"').join(",")).join("\n"),u=URL.createObjectURL(new Blob([s],{type:"text/csv;charset=utf-8"})),z=document.createElement("a");
-      z.href=u;
-      z.download="Remainder_Theorem_Inquiry_Lab_results.csv";
-      z.click();
-      URL.revokeObjectURL(u);
-    }
 
+      let rawData = cloudResults.length > 0 ? cloudResults : rec();
+      if(!rawData.length){ alert("ยังไม่มีข้อมูลสำหรับส่งออก"); return; }
+
+      // แปลงโครงสร้าง Array จาก Sheet ให้มีคีย์ตรงกับตาราง Dashboard
+      let exportRows = [];
+      rawData.forEach((x, idx) => {
+        if (!x) return;
+
+        if (Array.isArray(x)) {
+          let hasData = x.some(cell => String(cell).trim() !== "");
+          if (!hasData) return;
+
+          let col0 = String(x[0] || "").trim();
+          let col1 = String(x[1] || "").trim();
+          let col2 = String(x[2] || "").trim();
+          if (col0 === "รอบที่" || col1 === "วันที่-เวลา" || col1 === "Timestamp" || col2 === "ชื่อ-รหัส") return;
+
+          let hintVal = parseInt(x[11]);
+          if (isNaN(hintVal)) hintVal = 0;
+
+          let scoreVal = parseFloat(x[12]);
+          if (isNaN(scoreVal)) scoreVal = 0;
+
+          let timeVal = parseInt(x[13]);
+          if (isNaN(timeVal)) timeVal = 0;
+
+          let factorVal = String(x[8] || "");
+          let isFactorOK = (factorVal === "✓" || factorVal.includes("เข้าใจ") || factorVal.toLowerCase() === "true" || factorVal === "yes");
+
+          exportRows.push({
+            round: x[0] || (idx + 1),
+            name: x[2] || "-",
+            room: x[3] || "-",
+            num: x[4] || "-",
+            poly: x[5] || "-",
+            c: x[6] || "-",
+            pc: x[7] ?? "-",
+            factor: isFactorOK ? "✓" : "-",
+            degree: x[9] ?? "-",
+            q: x[10] || "-",
+            hints: hintVal,
+            score: scoreVal,
+            time: timeVal,
+            ref: x[14] || x[13] || "-"
+          });
+        } else if (typeof x === "object") {
+          exportRows.push({
+            round: x.round || (idx + 1),
+            name: x.name || "-",
+            room: x.room || "-",
+            num: x.num || "-",
+            poly: x.poly || "-",
+            c: x.c || "-",
+            pc: x.pc ?? "-",
+            factor: x.factor ? "✓" : "-",
+            degree: x.degree ?? "-",
+            q: x.q || "-",
+            hints: x.hints || 0,
+            score: x.score || 0,
+            time: x.time || 0,
+            ref: x.ref || "-"
+          });
+        }
+      });
+
+      if(!exportRows.length){ alert("ไม่พบข้อมูลที่สามารถส่งออกได้"); return; }
+
+      // กำหนดหัวข้อคอลัมน์ภาษาไทยในไฟล์ CSV
+      let headers = ["รอบที่", "ชื่อ-นามสกุล", "ห้อง", "เลขที่", "P(x)", "c", "P(c)", "ตัวประกอบ", "ดีกรี Q", "Q(x)", "คำใบ้", "คะแนน", "เวลา (s)", "Reflection"];
+      let keys = ["round", "name", "room", "num", "poly", "c", "pc", "factor", "degree", "q", "hints", "score", "time", "ref"];
+
+      let csvContent = "\ufeff" + headers.join(",") + "\n" +
+        exportRows.map(row => keys.map(k => '"' + String(row[k] ?? "").replaceAll('"', '""') + '"').join(",")).join("\n");
+
+      let blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
+      let url = URL.createObjectURL(blob);
+      let a = document.createElement("a");
+      a.href = url;
+      a.download = "Remainder_Theorem_Inquiry_Lab_results.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
     localStorage.setItem("rtl_v4_ep", DEFAULT_WEB_APP_URL);
     $("ep").value = DEFAULT_WEB_APP_URL;
   </script>
