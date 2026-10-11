@@ -60,7 +60,6 @@
           <button class="p" onclick="pc()">1️⃣ ทดลอง P(c)</button>
           <button onclick="newProblem()">🎲 เปลี่ยนโจทย์</button>
         </div>
-        <!-- แสดงประวัติเฉพาะในโหมดนักเรียน -->
         <div id="cHistoryBox" class="c-history hidden"><b>📜 ประวัติการทดลองแทนค่า c:</b> <span id="cHistoryText"></span></div>
         <div id="s2" class="hidden">
           <div id="pco" class="status"></div>
@@ -123,7 +122,7 @@
     let autoRefreshInterval = null;
     let scoreStep1 = 2, scoreStep2 = 2, scoreStep3 = 2, scoreStep4 = 4;
     let pcAttempts = 0; 
-    let cHistoryList = []; // เก็บประวัติการลองแทนค่า c ในโหมดนักเรียน
+    let cHistoryList = [];
 
     const $=id=>document.getElementById(id);
     
@@ -280,31 +279,32 @@
         return;
       }
       
-      pcAttempts++;
+      pcAttempts++; // นับจำนวนครั้งที่กดทดลอง c
       S.poly=$("poly").value;
       S.c=$("c").value;
-      S.pc=ev(a,c);
+      S.pc=ev(a,c); // คำนวณค่า P(c) ทุกครั้งที่ป้อนค่า c ใดๆ
       S.attempts++;
       
-      // แสดงประวัติการทดลองแทนค่า c ในโหมดนักเรียน
+      // บันทึกและแสดงผลประวัติการแทนค่า c ในโหมดนักเรียน
       cHistoryList.push("แทน c = " + fmt(c) + " ได้ P(" + fmt(c) + ") = " + fmt(S.pc));
       $("cHistoryBox").classList.remove("hidden");
       $("cHistoryText").innerHTML = cHistoryList.join(" &nbsp;➔&nbsp; ");
 
+      // คำนวณการหักคะแนน: หากสุ่ม/กดทดลอง c เกิน 1 ครั้ง จะโดนหัก 1 คะแนน (เหลือ 1 คะแนน)
       let penalty = (pcAttempts > 1) ? 1 : 0;
       
       if(Math.abs(S.pc) < 1e-9){
-        scoreStep1 = 2 - penalty;
+        scoreStep1 = 2 - penalty; // หาก P(c) = 0 ผ่านไปขั้นถัดไป ได้ 2 คะแนน (ถ้าครั้งแรก) หรือ 1 คะแนน (ถ้ากดซ้ำ)
         $("s2").classList.remove("hidden");
         $("pco").className="status ok";
         $("pco").innerHTML="🔎 P("+fmt(c)+") = <b>"+fmt(S.pc)+"</b> — สืบเสาะต่อได้เลย" + 
-          (penalty > 0 ? " <span style='color:#9a3412; font-weight:bold;'>(ทดลอง c ไป "+pcAttempts+" ครั้ง ถูกหัก 1 คะแนน)</span>" : "");
+          (penalty > 0 ? " <span style='color:#9a3412; font-weight:bold;'>(สุ่ม/แทนค่า c ไป "+pcAttempts+" ครั้ง ถูกหัก 1 คะแนน)</span>" : "");
       } else {
-        scoreStep1 = 0;
+        scoreStep1 = 0; // หาก P(c) ยังไม่เป็น 0 ยังไม่ให้ผ่านไปขั้นถัดไป
         $("s2").classList.add("hidden");
         $("pco").className="status hint";
-        $("pco").innerHTML="🔎 P("+fmt(c)+") = <b>"+fmt(S.pc)+"</b> (เศษยังไม่เป็น 0 ลองเลือกค่า c ใหม่)" + 
-          (pcAttempts > 1 ? " <span style='color:#9a3412; font-weight:bold;'>(ทดลองไป "+pcAttempts+" ครั้ง - หากหา P(c)=0 เจอจะได้สูงสุด 1 คะแนน)</span>" : "");
+        $("pco").innerHTML="🔎 คำนวณได้ P("+fmt(c)+") = <b>"+fmt(S.pc)+"</b> (เศษยังไม่เป็น 0 ลองเลือกค่า c ใหม่)" + 
+          (pcAttempts > 0 ? " <span style='color:#9a3412; font-weight:bold;'>(ลองไปแล้ว "+pcAttempts+" ครั้ง - หากหา P(c)=0 เจอจะได้รับ "+(pcAttempts==1?2:1)+" คะแนน)</span>" : "");
       }
       
       updateTotalScore();
