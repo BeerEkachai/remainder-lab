@@ -118,7 +118,9 @@
     let cloudResults = [];
     let isTeacherAuthed = false;
     let autoRefreshInterval = null;
-    let scoreStep1 = 0, scoreStep2 = 2, scoreStep3 = 2, scoreStep4 = 4;
+    let scoreStep1 = 2, scoreStep2 = 2, scoreStep3 = 2, scoreStep4 = 4;
+    let pcAttempts = 0; // ตัวแปรนับจำนวนครั้งที่สุ่ม/ทดลอง c
+
     const $=id=>document.getElementById(id);
     
     function mode(x){
@@ -212,7 +214,23 @@
         $("loginMsg").innerHTML='<div class="status err">กรุณากรอกชื่อหรือรหัส</div>';
         return;
       }
-      S={id:Date.now().toString(),name:n,room:$("room").value.trim(),num:$("num").value.trim(),score:0,hints:0,start:Date.now(),attempts:0};
+      S={
+        id: Date.now().toString(),
+        name: n,
+        room: $("room").value.trim(),
+        num: $("num").value.trim(),
+        poly: $("poly").value.trim(),
+        c: $("c").value.trim(),
+        pc: "-",
+        factor: false,
+        degree: "-",
+        q: "-",
+        score: 0,
+        hints: 0,
+        start: Date.now(),
+        attempts: 0,
+        ref: ""
+      };
       $("who").textContent=n+" | "+(S.room||"-")+" | เลขที่ "+(S.num||"-");
       $("lab").classList.remove("hidden");
       reset();
@@ -227,7 +245,8 @@
       $("q").value="";
       $("ref").value="";
       hl=0;
-      scoreStep1 = 0;
+      pcAttempts = 0; // รีเซ็ตจำนวนครั้งที่สุ่ม/ทดลอง c
+      scoreStep1 = 2; // เริ่มต้นให้คะแนนเต็ม 2
       scoreStep2 = 2;
       scoreStep3 = 2;
       scoreStep4 = 4;
@@ -237,6 +256,10 @@
       let p = probs[Math.floor(Math.random()*probs.length)];
       $("poly").value = p[0];
       $("c").value = p[1];
+      if(S) {
+        S.poly = p[0];
+        S.c = p[1];
+      }
       reset();
     }
     
@@ -250,15 +273,29 @@
         $("fb").innerHTML='<div class="status err">ตรวจรูปแบบ P(x) และ c</div>';
         return;
       }
+      
+      pcAttempts++; // นับจำนวนครั้งที่กดทดลอง c
       S.poly=$("poly").value;
       S.c=$("c").value;
       S.pc=ev(a,c);
       S.attempts++;
-      $("s2").classList.remove("hidden");
-      $("pco").className="status "+(Math.abs(S.pc)<1e-9?"ok":"");
-      $("pco").innerHTML="🔎 P("+fmt(c)+") = <b>"+fmt(S.pc)+"</b>"+(Math.abs(S.pc)<1e-9?" — สืบเสาะต่อได้เลย":"");
       
-      scoreStep1 = Math.abs(S.pc)<1e-9 ? 2 : 0;
+      // กฎการคิดคะแนน: สุ่ม/ทดลอง c เกิน 1 ครั้ง หักเพียง 1 คะแนนเท่านั้น
+      let penalty = (pcAttempts > 1) ? 1 : 0;
+      
+      if(Math.abs(S.pc) < 1e-9){
+        scoreStep1 = 2 - penalty; // ได้ 2 คะแนน หรือ 1 คะแนน
+        $("s2").classList.remove("hidden");
+        $("pco").className="status ok";
+        $("pco").innerHTML="🔎 P("+fmt(c)+") = <b>"+fmt(S.pc)+"</b> — สืบเสาะต่อได้เลย" + 
+          (penalty > 0 ? " <span style='color:#9a3412; font-weight:bold;'>(ทดลอง c ไป "+pcAttempts+" ครั้ง ถูกหัก 1 คะแนน)</span>" : "");
+      } else {
+        scoreStep1 = 0; // หากยังไม่พบ P(c)=0
+        $("s2").classList.add("hidden");
+        $("pco").className="status hint";
+        $("pco").innerHTML="🔎 P("+fmt(c)+") = <b>"+fmt(S.pc)+"</b> (เศษยังไม่เป็น 0 ลองเลือกค่า c ใหม่)";
+      }
+      
       updateTotalScore();
     }
     
@@ -317,7 +354,9 @@
       
       let a=rec();
       let myPreviousRuns = a.filter(x => x.name === S.name && x.room === S.room && x.num === S.num);
-      S.round = myPreviousRuns.length + 1;
+      let nextRound = myPreviousRuns.length + 1;
+      S.round = "รอบที่ " + nextRound; // เพิ่มคำว่า "รอบที่" ก่อนส่งบันทึก
+      
       a.push({...S});
       localStorage.setItem("rtl_v4_results",JSON.stringify(a));
       trySync(S);
@@ -390,7 +429,6 @@
       a.forEach((x, idx) => {
         if (!x) return;
 
-        // ถ้ารับข้อมูลเป็น Array จาก Google Sheets
         if (Array.isArray(x)) {
           let hasData = x.some(cell => String(cell).trim() !== "");
           if (!hasData) return;
@@ -403,13 +441,9 @@
             return; // ข้ามแถวหัวตาราง
           }
 
-          // Index คอลัมน์จาก Sheet:
-          // Col K (x[10]) = Q(x)
-          // Col L (x[11]) = คำใบ้ (Hints)
-          // Col M (x[12]) = คะแนน (Score)
-          // Col N (x[13]) = เวลา (Time)
-          // Col O (x[14]) = Reflection
-          
+          let rawRound = String(x[0] || (idx + 1)).trim();
+          let roundText = rawRound.includes("รอบที่") ? rawRound : "รอบที่ " + rawRound;
+
           let qVal = x[10] || "-";
           let hintVal = parseInt(x[11]);
           if (isNaN(hintVal)) hintVal = 0;
@@ -420,13 +454,13 @@
           let timeVal = parseInt(x[13]);
           if(isNaN(timeVal)) timeVal = 0;
 
-          let refVal = x[14] || x[13] || "-"; // อ่านค่า Reflection (ยืดหยุ่นรองรับตำแหน่งคอลัมน์)
+          let refVal = x[14] || x[13] || "-";
 
           let factorVal = String(x[8] || ""); 
           let isFactorOK = (factorVal === "✓" || factorVal.includes("เข้าใจ") || factorVal.toLowerCase() === "true" || factorVal === "yes");
 
           parsedRows.push({
-            round: x[0] || (idx + 1),       
+            round: roundText,       
             name: x[2] || "-",      
             room: x[3] || "-",              
             num: x[4] || "-",               
@@ -440,15 +474,17 @@
             ref: refVal
           });
         } 
-        // ถ้ารับข้อมูลเป็น Object (LocalStorage)
         else if (typeof x === "object") {
           let scoreVal = parseFloat(x.score);
           if(isNaN(scoreVal)) scoreVal = 0;
           let hintVal = parseInt(x.hints);
           if(isNaN(hintVal)) hintVal = 0;
 
+          let rawRound = String(x.round || (idx + 1)).trim();
+          let roundText = rawRound.includes("รอบที่") ? rawRound : "รอบที่ " + rawRound;
+
           parsedRows.push({
-            round: x.round || (idx + 1),
+            round: roundText,
             name: x.name || "-",
             room: x.room || "-",
             num: x.num || "-",
@@ -517,7 +553,6 @@
       let rawData = cloudResults.length > 0 ? cloudResults : rec();
       if(!rawData.length){ alert("ยังไม่มีข้อมูลสำหรับส่งออก"); return; }
 
-      // แปลงโครงสร้าง Array จาก Sheet ให้มีคีย์ตรงกับตาราง Dashboard
       let exportRows = [];
       rawData.forEach((x, idx) => {
         if (!x) return;
@@ -530,6 +565,9 @@
           let col1 = String(x[1] || "").trim();
           let col2 = String(x[2] || "").trim();
           if (col0 === "รอบที่" || col1 === "วันที่-เวลา" || col1 === "Timestamp" || col2 === "ชื่อ-รหัส") return;
+
+          let rawRound = String(x[0] || (idx + 1)).trim();
+          let roundText = rawRound.includes("รอบที่") ? rawRound : "รอบที่ " + rawRound;
 
           let hintVal = parseInt(x[11]);
           if (isNaN(hintVal)) hintVal = 0;
@@ -544,7 +582,7 @@
           let isFactorOK = (factorVal === "✓" || factorVal.includes("เข้าใจ") || factorVal.toLowerCase() === "true" || factorVal === "yes");
 
           exportRows.push({
-            round: x[0] || (idx + 1),
+            round: roundText,
             name: x[2] || "-",
             room: x[3] || "-",
             num: x[4] || "-",
@@ -560,8 +598,11 @@
             ref: x[14] || x[13] || "-"
           });
         } else if (typeof x === "object") {
+          let rawRound = String(x.round || (idx + 1)).trim();
+          let roundText = rawRound.includes("รอบที่") ? rawRound : "รอบที่ " + rawRound;
+
           exportRows.push({
-            round: x.round || (idx + 1),
+            round: roundText,
             name: x.name || "-",
             room: x.room || "-",
             num: x.num || "-",
@@ -581,7 +622,6 @@
 
       if(!exportRows.length){ alert("ไม่พบข้อมูลที่สามารถส่งออกได้"); return; }
 
-      // กำหนดหัวข้อคอลัมน์ภาษาไทยในไฟล์ CSV
       let headers = ["รอบที่", "ชื่อ-นามสกุล", "ห้อง", "เลขที่", "P(x)", "c", "P(c)", "ตัวประกอบ", "ดีกรี Q", "Q(x)", "คำใบ้", "คะแนน", "เวลา (s)", "Reflection"];
       let keys = ["round", "name", "room", "num", "poly", "c", "pc", "factor", "degree", "q", "hints", "score", "time", "ref"];
 
@@ -596,6 +636,7 @@
       a.click();
       URL.revokeObjectURL(url);
     }
+
     localStorage.setItem("rtl_v4_ep", DEFAULT_WEB_APP_URL);
     $("ep").value = DEFAULT_WEB_APP_URL;
   </script>
