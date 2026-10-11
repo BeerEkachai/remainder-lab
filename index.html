@@ -119,7 +119,7 @@
     let isTeacherAuthed = false;
     let autoRefreshInterval = null;
     let scoreStep1 = 2, scoreStep2 = 2, scoreStep3 = 2, scoreStep4 = 4;
-    let pcAttempts = 0; // ตัวแปรนับจำนวนครั้งที่สุ่ม/ทดลอง c
+    let pcAttempts = 0; // ตัวแปรนับจำนวนครั้งที่สุ่ม/ทดลองกด c
 
     const $=id=>document.getElementById(id);
     
@@ -245,8 +245,8 @@
       $("q").value="";
       $("ref").value="";
       hl=0;
-      pcAttempts = 0; // รีเซ็ตจำนวนครั้งที่สุ่ม/ทดลอง c
-      scoreStep1 = 2; // เริ่มต้นให้คะแนนเต็ม 2
+      pcAttempts = 0; // รีเซ็ตนับจำนวนครั้งทดลอง c
+      scoreStep1 = 2; // คะแนนเต็มในขั้นทดลอง c
       scoreStep2 = 2;
       scoreStep3 = 2;
       scoreStep4 = 4;
@@ -274,26 +274,27 @@
         return;
       }
       
-      pcAttempts++; // นับจำนวนครั้งที่กดทดลอง c
+      pcAttempts++; // เพิ่มจำนวนครั้งที่กดปุ่มทดลอง c
       S.poly=$("poly").value;
       S.c=$("c").value;
       S.pc=ev(a,c);
       S.attempts++;
       
-      // กฎการคิดคะแนน: สุ่ม/ทดลอง c เกิน 1 ครั้ง หักเพียง 1 คะแนนเท่านั้น
+      // กฎการคิดคะแนน: ทดลอง/สุ่ม c เกิน 1 ครั้ง หัก 1 คะแนน (ได้สูงสุด 1 คะแนน)
       let penalty = (pcAttempts > 1) ? 1 : 0;
       
       if(Math.abs(S.pc) < 1e-9){
-        scoreStep1 = 2 - penalty; // ได้ 2 คะแนน หรือ 1 คะแนน
+        scoreStep1 = 2 - penalty; // หากผ่านจะได้ 2 คะแนน (ถ้ากดครั้งแรก) หรือ 1 คะแนน (ถ้ากดเกิน 1 ครั้ง)
         $("s2").classList.remove("hidden");
         $("pco").className="status ok";
         $("pco").innerHTML="🔎 P("+fmt(c)+") = <b>"+fmt(S.pc)+"</b> — สืบเสาะต่อได้เลย" + 
           (penalty > 0 ? " <span style='color:#9a3412; font-weight:bold;'>(ทดลอง c ไป "+pcAttempts+" ครั้ง ถูกหัก 1 คะแนน)</span>" : "");
       } else {
-        scoreStep1 = 0; // หากยังไม่พบ P(c)=0
+        scoreStep1 = 0; // หากเศษยังไม่เป็น 0 ยังไม่ได้คะแนนในส่วนนี้
         $("s2").classList.add("hidden");
         $("pco").className="status hint";
-        $("pco").innerHTML="🔎 P("+fmt(c)+") = <b>"+fmt(S.pc)+"</b> (เศษยังไม่เป็น 0 ลองเลือกค่า c ใหม่)";
+        $("pco").innerHTML="🔎 P("+fmt(c)+") = <b>"+fmt(S.pc)+"</b> (เศษยังไม่เป็น 0 ลองเลือกค่า c ใหม่)" + 
+          (pcAttempts > 1 ? " <span style='color:#9a3412; font-weight:bold;'>(ทดลองไป "+pcAttempts+" ครั้ง - หากหา P(c)=0 เจอจะได้สูงสุด 1 คะแนน)</span>" : "");
       }
       
       updateTotalScore();
@@ -355,7 +356,7 @@
       let a=rec();
       let myPreviousRuns = a.filter(x => x.name === S.name && x.room === S.room && x.num === S.num);
       let nextRound = myPreviousRuns.length + 1;
-      S.round = "รอบที่ " + nextRound; // เพิ่มคำว่า "รอบที่" ก่อนส่งบันทึก
+      S.round = "รอบที่ " + nextRound;
       
       a.push({...S});
       localStorage.setItem("rtl_v4_results",JSON.stringify(a));
@@ -438,7 +439,7 @@
           let col2 = String(x[2] || "").trim();
           
           if (col0 === "รอบที่" || col1 === "วันที่-เวลา" || col1 === "Timestamp" || col2 === "ชื่อ-รหัส") {
-            return; // ข้ามแถวหัวตาราง
+            return;
           }
 
           let rawRound = String(x[0] || (idx + 1)).trim();
