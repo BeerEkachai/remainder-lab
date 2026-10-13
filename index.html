@@ -412,7 +412,7 @@
         dash();
         return;
       }
-      $("sm").innerHTML='<div class="status hint">⏳ กำลังดึงข้อมูลนักเรียนทุกคนจาก Google Sheets...</div>';
+      $("sm").innerHTML='<div class="status ok">✅ ดึงข้อมูลจากศูนย์กลางสำเร็จเรียบร้อย!</div>';
       try{
         let res = await fetch(e, { method: "GET", redirect: "follow" });
         let rows = await res.json();
