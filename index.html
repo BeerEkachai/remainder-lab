@@ -123,7 +123,7 @@
     let scoreStep1 = 2, scoreStep2 = 2, scoreStep3 = 2, scoreStep4 = 4;
     let pcAttempts = 0; 
     let cHistoryList = [];
-    let hasFailedAttempt = false; // บันทึกว่าเคยแทนค่า c แล้ว P(c) != 0 หรือไม่
+    let firstAttemptFailed = false; // ตัวแปรระบุว่า "แทนค่า c ครั้งแรกสุดผิดหรือไม่"
 
     const $=id=>document.getElementById(id);
     
@@ -251,7 +251,7 @@
       $("cHistoryText").textContent="";
       hl=0;
       pcAttempts = 0;
-      hasFailedAttempt = false; // รีเซ็ตสถานะการแทนผิด
+      firstAttemptFailed = false; // รีเซ็ตตัวเช็คครั้งแรก
       cHistoryList = [];
       scoreStep1 = 2;
       scoreStep2 = 2;
@@ -284,30 +284,34 @@
       pcAttempts++; 
       S.poly=$("poly").value;
       S.c=$("c").value;
-      S.pc=ev(a,c); // คำนวณค่า P(c) จริงจากค่า c ทุกตัวที่ป้อนเข้ามา
+      S.pc=ev(a,c); // คำนวณค่า P(c) ของทุกค่า c ที่แทนลงไปเสมอ
       S.attempts++;
       
-      // บันทึกประวัติและคำนวณแสดงผล P(c) ทุกครั้งที่กด
+      // บันทึกและแสดงผลประวัติการแทนค่า c ในโหมดนักเรียน
       cHistoryList.push("แทน c = " + fmt(c) + " ได้ P(" + fmt(c) + ") = " + fmt(S.pc));
       $("cHistoryBox").classList.remove("hidden");
       $("cHistoryText").innerHTML = cHistoryList.join(" &nbsp;➔&nbsp; ");
 
+      // ตรวจสอบเฉพาะ "การแทนค่า c ครั้งแรกสุด"
+      if (pcAttempts === 1 && Math.abs(S.pc) >= 1e-9) {
+        firstAttemptFailed = true; // บันทึกว่าครั้งแรกสุดแทนผิด
+      }
+
       if(Math.abs(S.pc) < 1e-9){
-        // ถ้าเคยแทนค่า c ผิดมาก่อน จะโดนหัก 1 คะแนน (เหลือ 1) / ถ้าไม่เคยแทนผิดเลย จะได้ 2 คะแนนเต็ม
-        let penalty = hasFailedAttempt ? 1 : 0;
+        // หากแทนครั้งแรกผิดจะถูกหัก 1 คะแนน (เหลือ 1) / หากแทนครั้งแรกถูก จะได้ 2 คะแนนเต็ม
+        let penalty = firstAttemptFailed ? 1 : 0;
         scoreStep1 = 2 - penalty;
         
         $("s2").classList.remove("hidden");
         $("pco").className="status ok";
         $("pco").innerHTML="🔎 P("+fmt(c)+") = <b>"+fmt(S.pc)+"</b> — สืบเสาะต่อได้เลย" + 
-          (penalty > 0 ? " <span style='color:#9a3412; font-weight:bold;'>(เนื่องจากเคยแทนค่า c ผิด จึงถูกหัก 1 คะแนน)</span>" : "");
+          (penalty > 0 ? " <span style='color:#9a3412; font-weight:bold;'>(เนื่องจากแทนค่า c ครั้งแรกไม่เป็น 0 จึงถูกหัก 1 คะแนน)</span>" : "");
       } else {
-        hasFailedAttempt = true; // ทำเครื่องหมายว่าเคยแทน c ผิดแล้ว
         scoreStep1 = 0; // หาก P(c) ยังไม่เป็น 0 ยังไม่ให้ผ่านไปขั้นถัดไป
         $("s2").classList.add("hidden");
         $("pco").className="status hint";
         $("pco").innerHTML="🔎 คำนวณได้ P("+fmt(c)+") = <b>"+fmt(S.pc)+"</b> (เศษยังไม่เป็น 0 ลองเลือกค่า c ใหม่) " + 
-          "<span style='color:#9a3412; font-weight:bold;'>(หากหา P(c)=0 เจอในครั้งถัดไปจะได้รับ 1 คะแนน)</span>";
+          "<span style='color:#9a3412; font-weight:bold;'>(เนื่องจากแทนครั้งแรกไม่เป็น 0 หากหา P(c)=0 เจอในครั้งถัดไปจะได้รับ 1 คะแนน)</span>";
       }
       
       updateTotalScore();
